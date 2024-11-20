@@ -196,7 +196,7 @@ sw $t3, 0($sp)
 addi $sp, $sp, -4
 sw $a0, 0($sp)
 
-
+add $a3, $t0, $zero
 jal Access_Row      # Call function
                     
                     # Load Variables
@@ -252,13 +252,18 @@ addi $sp, $sp, -4
 sw $a0, 0($sp)
 addi $sp, $sp, -4
 sw $a1, 0($sp)
+addi $sp, $sp, -4
+sw $a3, 0($sp)
 
 
+add $a2, $t0, $zero
 jalr $a0
 #lh $t3, 0($t2)      # Read value from memory
 #addi $t3, $t3, 1    # Increment value in memory
 #sh $t3, 0($t2)      # Save to memory
 
+lw $a3, 0($sp) 
+addi $sp, $sp, 4
 lw $a1, 0($sp)      # Load all registers
 addi $sp, $sp, 4 
 lw $a0, 0($sp) 
@@ -633,12 +638,69 @@ addi $a1, $zero, 13
 add $t8, $zero, $s4
 jal draw_rect
 
-j end_background
+
 
 ############################################## Inside Jar ##################################################################
+la $a0, Draw_Inside
+jal Access_All
+j end_background
+Draw_Inside:
+            # $a1 is a reference to the pice to be converted
+            # $a2 is the x
+            # $a3 is the y (bottom is higher)
+            
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
+
+add $t5, $a1, $zero
+sll $t0, $a2, 1
 
 
+sll $t3, $a3, 1
 
+addi $a0, $t0, 24
+
+addi $t1, $zero, 18
+add $a1, $t1, $t3
+
+addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+
+lh $t0, 0($t5)  #Read what piece is in place to t0
+li $t1, 14
+bge $t0, $t1, Blue
+li $t1, 9
+bge $t0, $t1, Yellow
+li $t1, 4
+bge $t0, $t1, Red
+li $t1, 3
+beq $t0, $t1, BlueVirus
+li $t1, 2
+beq $t0, $t1, Yellow_Virus
+li $t1, 1
+beq $t0, $t1, Red_Virus
+li $t8, 0
+j Inside_Pill_Draw_Rect
+BlueVirus:
+Blue:
+add $t8, $zero, $s5
+j Inside_Pill_Draw_Rect
+Yellow_Virus:
+Yellow:
+add $t8, $zero, $s4
+j Inside_Pill_Draw_Rect
+Red_Virus:
+Red:
+add $t8, $zero, $s3
+
+Inside_Pill_Draw_Rect:
+jal draw_rect
+
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra
+            #Comparisons to determine wht to draw
+            
 #######################################
 ### Third, I'll addd the filpboards ###
 #######################################
