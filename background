@@ -1,0 +1,324 @@
+.data
+displayaddress:     .word       0x10008000
+capsule_x:          .word       0
+capsule_y:          .word       0
+# ...
+
+.text
+# ...
+########################################
+### First, I'll draw the square grid ###
+########################################
+
+#$s1 - $s7 will store the colours
+li $s1, 0x321e96 # indigo, RGB 50, 30, 150
+li $s2, 0xc5d6b6 # white, RGB 197, 214, 182
+li $s3, 0xde126a # magenta, RGB 222, 18, 106
+li $s4, 0xe6a015 # yellow, RGB 230, 160, 21
+li $s5, 0x14bab7 # cyan, 20, 186, 183
+li $s6, 0xe3b19a # beige, RGB 227, 177, 154
+li $s6, 0x9c502d # brown, RGB 156, 80, 45
+
+# Set up the parameters for the rectangle drawing function
+add $a0, $zero, $zero          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+add $a1, $zero, $zero         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+li $t9, 0
+add $t8, $zero, $s1
+
+repeat_row:
+jal draw_grid_row
+
+new_row:
+add $a0, $zero, $zero
+addi $t9, $t9, 4
+add $a1, $t9, $zero 
+j repeat_row
+repeat_end:
+
+
+draw_grid_row:
+jal draw_rect
+
+beq $a1, 66, start_shift
+beq $a0, 60, new_row     # Break out of the loop when $a0 == 1024
+addi $a0, $a0, 4
+add $a1, $t9, $zero 
+j draw_grid_row
+
+
+
+
+#########################Shifted grid#################################
+
+start_shift:
+addi $a0, $zero, 2          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 2         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+li $t9, 0
+
+repeat_shift:
+jal shift_grid_row
+
+new_shift:
+addi $a0, $zero, 2
+addi $t9, $t9, 4
+addi $a1, $t9, 2
+j repeat_shift
+shift_end:
+j main_jar_start
+
+
+shift_grid_row:
+jal draw_rect
+
+beq $a1, 68, shift_end
+beq $a0, 62, new_shift     # Break out of the loop when 
+addi $a0, $a0, 4
+addi $a1, $t9, 2 
+j shift_grid_row
+
+#################################
+### Second, I'll make the jar ###
+#################################
+main_jar_start:
+addi $a0, $zero, 24          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 18         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 16          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 38          # Set the height of the rectangle (in pixels)
+add $t8, $zero, $zero
+
+jal draw_rect
+
+addi $a0, $zero, 30          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 14         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 4          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 16         # Set the height of the rectangle (in pixels)
+add $t8, $zero, $zero
+
+jal draw_rect
+
+addi $a0, $zero, 28          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 4         # Set the height of the rectangle (in pixels)
+add $t8, $zero, $zero
+
+jal draw_rect
+main_jar_end:
+jal jar_wall_start
+
+############################### Actual Jar ########################################
+
+jar_wall_start:
+addi $a0, $zero, 22          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 16         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+add $t8, $zero, $s5
+li $t7, 0
+
+jal vertical_start
+wall_end:
+j end_background
+
+vertical_start:
+jal draw_rect
+beq $a1, 58, vertical_start_end
+addi $t7, $t7, 2
+addi $a1, $t7, 16
+j vertical_start
+vertical_start_end:
+addi $a0, $zero, 40
+addi $a1, $zero, 16
+li $t7, 0
+j vertical_two
+
+vertical_two:
+jal draw_rect
+beq $a1, 58, vertical_end
+addi $t7, $t7, 2
+addi $a1, $t7, 16
+j vertical_two
+vertical_end:
+addi $a0, $zero, 24
+addi $a1, $zero, 56
+li $t7, 0
+
+bottom_wall:
+jal draw_rect
+beq $a0, 40, bottom_end
+addi $t7, $t7, 2
+li $a1, 56
+addi $a0, $t7, 24
+j bottom_wall
+bottom_end:
+addi $a0, $zero, 26          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 8         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+top_start:
+jal draw_rect
+beq $a0, 36, top_end
+addi $t7, $t7, 2
+li $a1, 8
+addi $a0, $t7, 26
+j top_start
+top_end:
+addi $a0, $zero, 24          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 16         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+top_two:
+jal draw_rect
+beq $a0, 28, top_two_end
+addi $t7, $t7, 2
+li $a1, 16
+addi $a0, $t7, 24
+j top_two
+top_two_end:
+addi $a0, $zero, 34          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 16         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+top_three:
+jal draw_rect
+beq $a0, 40, top_three_end
+addi $t7, $t7, 2
+li $a1, 16
+addi $a0, $t7, 34
+j top_three
+top_three_end:
+addi $a0, $zero, 26          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+rmouth_start:
+jal draw_rect
+beq $a1, 14, rmouth_end
+addi $t7, $t7, 2
+addi $a1, $t7, 10
+j rmouth_start
+rmouth_end:
+addi $a0, $zero, 28          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 12         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+rrmouth_start:
+jal draw_rect
+beq $a1, 16, rrmouth_end
+addi $t7, $t7, 2
+addi $a1, $t7, 12
+j rrmouth_start
+rrmouth_end:
+addi $a0, $zero, 36          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+lmouth_start:
+jal draw_rect
+beq $a1, 14, lmouth_end
+addi $t7, $t7, 2
+addi $a1, $t7, 10
+j lmouth_start
+lmouth_end:
+addi $a0, $zero, 34          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 12         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+lrmouth_start:
+jal draw_rect
+beq $a1, 16, wall_end
+addi $t7, $t7, 2
+addi $a1, $t7, 12
+j lrmouth_start
+lrmouth_end:
+
+#######################################
+### Third, I'll addd the filpboards ###
+#######################################
+
+#######################################
+### Fourth, I'll add the petri dish ###
+#######################################
+
+#########################################################
+### Finally, I'll add the box for Mario and the title ###
+#########################################################
+
+#
+#  The rectangle drawing function
+#
+#  $a0 = X coordinate for start of the line
+#  $a1 = Y coordinate for start of the line
+#  $a2 = wdith of the rectangle 
+#  $a3 = height of the rectangle 
+#  $t0 = the current row being drawn 
+draw_rect:
+add $t0, $zero, $zero       # create a loop variable with an iniital value of 0
+row_start:
+# Use the stack to store all registers that will be overwritten by draw_line
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $t0, 0($sp)              # store $t0 on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a0, 0($sp)              # store $a0 on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a1, 0($sp)              # store $a1 on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $a2, 0($sp)              # store $a2 on the stack
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+sw $ra, 0($sp)              # store $ra on the stack
+
+jal draw_line               # call the draw_line function
+
+# restore all the registers that were stored on the stack
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $a2, 0($sp)              # restore $a2 from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $a1, 0($sp)              # restore $a1 from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $a0, 0($sp)              # restore $a0 from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+lw $t0, 0($sp)              # restore $t0 from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+
+addi $a1, $a1, 1            # move to the next row to draw
+addi $t0, $t0, 1            # increment the row variable by 1
+beq $t0, $a3, row_end       # when the last line has been drawn, break out of the line-drawing loop
+j row_start                 # jump to the start of the line-drawing section
+row_end:
+jr $ra                      # return to the calling program
+
+#
+#  The line drawing function
+#
+#  $a0 = X coordinate for start of the line
+#  $a1 = Y coordinate for start of the line
+#  $a2 = length of the line
+#  
+draw_line:
+add $t1, $t8, $zero           # Set the colour of the line (to yellow)
+lw $t0, displayaddress      # $t0 = base address for display
+sll $a1, $a1, 8             # Calculate the Y offset to add to $t0 (multiply $a1 by 128)
+sll $a0, $a0, 2             # Calculate the X offset to add to $t0 (multiply $a0 by 4)
+add $t2, $t0, $a1           # Add the Y offset to $t0, store the result in $t2
+add $t2, $t2, $a0           # Add the X offset to $t2 ($t2 now has the starting location of the line in bitmap memory)
+# Calculate the final point in the line (start point + length x 4)
+sll $a2, $a2, 2             # Multiply the length by 4
+add $t3, $t2, $a2           # Calculate the address of the final point in the line, store result in $t3.
+# Start the loop
+line_start:
+sw $t1, 0($t2)              # Draw a yellow pixel at the current location in the bitmap
+# Loop until the current pixel has reached the final point in the line.
+addi $t2, $t2, 4            # Move the current location to the next pixel
+beq $t2, $t3, line_end      # Break out of the loop when $t2 == $t3
+j line_start
+# End the loop
+line_end:
+# Return to calling program
+jr $ra
+
+end_background:
