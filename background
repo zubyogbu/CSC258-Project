@@ -256,7 +256,19 @@ sw $zero, 3444( $t0 )
 sw $zero, 3464( $t0 )
 sw $zero, 4468( $t0 )
 sw $zero, 4488( $t0 )
-curve_end:
+
+sample_pill: # Sample pill
+addi $a0, $zero, 30          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 13         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+add $t8, $zero, $s3
+jal draw_rect
+addi $a0, $a0, 2          
+addi $a1, $zero, 13
+add $t8, $zero, $s4
+jal draw_rect
+
 j end_background
 
 #######################################
