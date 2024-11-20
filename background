@@ -87,7 +87,7 @@ main_jar_start:             # Creating the rectangular "Play Area" inside the ja
 addi $a0, $zero, 24         # Set the X coordinate for the top left corner of the rectangle (in pixels)
 addi $a1, $zero, 18         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
 addi $a2, $zero, 16          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 38          # Set the height of the rectangle (in pixels)
+addi $a3, $zero, 32          # Set the height of the rectangle (in pixels)
 add $t8, $zero, $zero
 
 jal draw_rect
@@ -126,7 +126,7 @@ j curve_start
 # Creating the various wall outside the jar
 vertical_start: 
 jal draw_rect
-beq $a1, 56, vertical_start_end
+beq $a1, 50, vertical_start_end
 addi $t7, $t7, 2
 addi $a1, $t7, 18
 j vertical_start
@@ -138,13 +138,13 @@ j vertical_two
 
 vertical_two:
 jal draw_rect
-beq $a1, 56, vertical_end
+beq $a1, 50, vertical_end
 addi $t7, $t7, 2
 addi $a1, $t7, 18
 j vertical_two
 vertical_end:
 addi $a0, $zero, 22
-addi $a1, $zero, 56
+addi $a1, $zero, 50
 addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
 addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
 li $t7, 0
@@ -153,7 +153,7 @@ bottom_wall:
 jal draw_rect
 beq $a0, 40, bottom_end
 addi $t7, $t7, 2
-li $a1, 56
+li $a1, 50
 addi $a0, $t7, 22
 j bottom_wall
 bottom_end:
