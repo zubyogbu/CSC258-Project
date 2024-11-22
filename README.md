@@ -1,4 +1,5 @@
 .data
+dummy_var: .space 500000   # Reserve 50000 bytes for the dummy variable (adjust size as needed)
 displayaddress:     .word       0x10008000
 Board: .half 0:128      # array of 128 half words (8 bits) used for storing the board. X,Y position 0,0 
                         # is element 0. Y incemets every 8 words (8*8 = 64 bits). The top left part of the 
@@ -368,7 +369,6 @@ jr $ra              # Exit function
 
 
 
-
 # ...
 ########################################
 ### First, I'll draw the square grid ###
@@ -390,8 +390,8 @@ li $s6, 0x9c502d # brown, RGB 156, 80, 45
 # Set up the parameters for the rectangle drawing function
 add $a0, $zero, $zero          # Set the X coordinate for the top left corner of the rectangle (in pixels)
 add $a1, $zero, $zero         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t9, 0                   # Increment value
 add $t8, $zero, $s1         # Grid colour
 
@@ -400,18 +400,18 @@ jal draw_grid_row
 
 new_row:                    # Creates a new row 4 pixel below the previous
 add $a0, $zero, $zero
-addi $t9, $t9, 4
+addi $t9, $t9, 16
 add $a1, $t9, $zero 
 j repeat_row
 repeat_end:
 
 
 draw_grid_row:              # Creates a row for the checkerboard pattern background
+bge $a1, 256, start_shift  # Once all the normal row are made, a similar process is started for even numbered rows with the pattern shifted 
 jal draw_rect
 
-beq $a1, 66, start_shift  # Once all the normal row are made, a similar process is started for even numbered rows with the pattern shifted 
-beq $a0, 60, new_row     # Create a new row once the X position reaches 60
-addi $a0, $a0, 4
+bge $a0, 248, new_row     # Create a new row once the X position reaches 60
+addi $a0, $a0, 16
 add $a1, $t9, $zero 
 j draw_grid_row
 
@@ -421,57 +421,56 @@ j draw_grid_row
 #########################Shifted grid#################################
 
 start_shift:
-addi $a0, $zero, 2          # Set the X coordinate diagonal to the top left square
-addi $a1, $zero, 2         # Set the Y coordinate diagonal to the top left square
-addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 8          # Set the X coordinate diagonal to the top left square
+addi $a1, $zero, 8         # Set the Y coordinate diagonal to the top left square
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t9, 0
 
 repeat_shift:
 jal shift_grid_row
 
 new_shift:
-addi $a0, $zero, 2
-addi $t9, $t9, 4
-addi $a1, $t9, 2
+addi $a0, $zero, 8
+addi $t9, $t9, 16
+addi $a1, $t9, 8
 j repeat_shift
 shift_end:
 j main_jar_start
 
-
 shift_grid_row:
+bge $a1, 256, shift_end
 jal draw_rect
 
-beq $a1, 68, shift_end
-beq $a0, 62, new_shift     
-addi $a0, $a0, 4
-addi $a1, $t9, 2 
+bge $a0, 248, new_shift     
+addi $a0, $a0, 16
+addi $a1, $t9, 8 
 j shift_grid_row
 
 #################################
 ### Second, I'll make the jar ###
 #################################
 main_jar_start:             # Creating the rectangular "Play Area" inside the jar
-addi $a0, $zero, 24         # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 18         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 16          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 32          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 96         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 72         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 64          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 128          # Set the height of the rectangle (in pixels)
 add $t8, $zero, $zero
 
 jal draw_rect
 # Creating the mouth of the jar
-addi $a0, $zero, 30          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 14         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 4          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 16         # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 120          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 56         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 16          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 64         # Set the height of the rectangle (in pixels)
 add $t8, $zero, $zero
 
 jal draw_rect
 # Creating the very top of the jar 
-addi $a0, $zero, 28          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 4         # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 112          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 40         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 32          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 16         # Set the height of the rectangle (in pixels)
 add $t8, $zero, $zero
 
 jal draw_rect
@@ -481,153 +480,506 @@ jal jar_wall_start
 ############################### Actual Jar ########################################
 
 jar_wall_start:             # Creating the walls around the "Play Area" 
-addi $a0, $zero, 21          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 18         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 3          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 88         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 72         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 add $t8, $zero, $s5
 li $t7, 0
 
 jal vertical_start
 wall_end:
-j curve_start
+j i_wall_start
 # Creating the various wall outside the jar
 vertical_start: 
 jal draw_rect
-beq $a1, 50, vertical_start_end
-addi $t7, $t7, 2
-addi $a1, $t7, 18
+bge $a1, 200, vertical_start_end
+addi $t7, $t7, 8
+addi $a1, $t7, 72
 j vertical_start
 vertical_start_end:
-addi $a0, $zero, 40
-addi $a1, $zero, 18
+addi $a0, $zero, 160
+addi $a1, $zero, 72
 li $t7, 0
 j vertical_two
 
 vertical_two:
 jal draw_rect
-beq $a1, 50, vertical_end
-addi $t7, $t7, 2
-addi $a1, $t7, 18
+beq $a1, 200, vertical_end
+addi $t7, $t7, 8
+addi $a1, $t7, 72
 j vertical_two
 vertical_end:
-addi $a0, $zero, 22
-addi $a1, $zero, 50
-addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 88
+addi $a1, $zero, 200
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t7, 0
 
 bottom_wall:
 jal draw_rect
-beq $a0, 40, bottom_end
-addi $t7, $t7, 2
-li $a1, 50
-addi $a0, $t7, 22
+bge $a0, 160, bottom_end
+addi $t7, $t7, 8
+li $a1, 200
+addi $a0, $t7, 88
 j bottom_wall
 bottom_end:
-addi $a0, $zero, 26          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 9         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 1          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 104          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 36         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 4          # Set the height of the rectangle (in pixels)
 li $t7, 0
 
 top_start:
 jal draw_rect
-beq $a0, 36, top_end
-addi $t7, $t7, 2
-li $a1, 9
-addi $a0, $t7, 26
+beq $a0, 144, top_end
+addi $t7, $t7, 8
+li $a1, 36
+addi $a0, $t7, 104
 j top_start
 top_end:
-addi $a0, $zero, 22          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 16         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 4          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 88          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 64         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t7, 0
 
 top_two:                    # The left shoulder (horivontal) of the bottle 
 jal draw_rect
-beq $a0, 26, top_two_end
-addi $t7, $t7, 2
-li $a1, 16
-addi $a0, $t7, 24
+bge $a0, 108, top_two_end
+addi $t7, $t7, 8
+li $a1, 64
+addi $a0, $t7, 88
 j top_two
 top_two_end:
-addi $a0, $zero, 34          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 16         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 4          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 136          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 64         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t7, 0
 
 top_three:                   # The right shoulder (horivontal) of the bottle
 jal draw_rect
-beq $a0, 38, top_three_end
-addi $t7, $t7, 2
-li $a1, 16
-addi $a0, $t7, 34
+beq $a0, 160, top_three_end
+addi $t7, $t7, 8
+li $a1, 64
+addi $a0, $t7, 136
 j top_three
 top_three_end:
-addi $a0, $zero, 25          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
-addi $a2, $zero, 3          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a0, $zero, 104          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 40         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 li $t7, 0
 
 rmouth_start:
 jal draw_rect
-beq $a1, 14, rmouth_end
-addi $t7, $t7, 2
-addi $a1, $t7, 10
+beq $a1, 56, rmouth_end
+addi $t7, $t7, 8
+addi $a1, $t7, 40
 j rmouth_start
 rmouth_end:
-addi $a0, $zero, 27          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 13         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a0, $zero, 112          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 48         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
 li $t7, 0
 
 rrmouth_start:
 jal draw_rect
-beq $a1, 17, rrmouth_end
+beq $a1, 68, rrmouth_end
 addi $t7, $t7, 2
-addi $a1, $t7, 13
+addi $a1, $t7, 48
 j rrmouth_start
 rrmouth_end:
-addi $a0, $zero, 36          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 10         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a0, $zero, 144          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 40         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
 li $t7, 0
 
 lmouth_start:
 jal draw_rect
-beq $a1, 14, lmouth_end
-addi $t7, $t7, 2
-addi $a1, $t7, 10
+beq $a1, 56, lmouth_end
+addi $t7, $t7, 8
+addi $a1, $t7, 40
 j lmouth_start
 lmouth_end:
-addi $a0, $zero, 34          # Set the X coordinate for the top left corner of the rectangle (in pixels)
-addi $a1, $zero, 13         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a0, $zero, 136          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 48         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
 li $t7, 0
 
 lrmouth_start:
 jal draw_rect
-beq $a1, 17, wall_end
+beq $a1, 68, wall_end
 addi $t7, $t7, 2
-addi $a1, $t7, 13
+addi $a1, $t7, 48
 j lrmouth_start
 lrmouth_end:
 
 #################################### Detailing Jar #######################################################
 
-curve_start: # Curving some of the edges
-lw $t0, displayaddress # $t0 = base address for display
-sw $s1, 3428( $t0 )
-sw $zero, 3480( $t0 )
-sw $zero, 3444( $t0 )
-sw $zero, 3464( $t0 )
-sw $zero, 4468( $t0 )
-sw $zero, 4488( $t0 )
+i_wall_start:             # Creating the details of walls around the "Play Area" 
+addi $a0, $zero, 89         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 71         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 6          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
+add $t8, $zero, $s1
+li $t7, 0
 
+jal i_vertical_start
+i_wall_end:
+j end_background
+# Creating the various wall outside the jar
+i_vertical_start: 
+jal draw_rect
+bge $a1, 201, i_vertical_start_end
+addi $t7, $t7, 3
+addi $a1, $t7, 72
+j i_vertical_start
+i_vertical_start_end:
+addi $a0, $zero, 161
+addi $a1, $zero, 71
+li $t7, 0
+j i_vertical_two
+
+i_vertical_two:
+jal draw_rect
+bge $a1, 201, i_vertical_end
+addi $t7, $t7, 3
+addi $a1, $t7, 72
+j i_vertical_two
+i_vertical_end:
+addi $a0, $zero, 89
+addi $a1, $zero, 201
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 6          # Set the height of the rectangle (in pixels)
+li $t7, 0
+
+i_bottom_wall:
+jal draw_rect
+bge $a0, 159, i_bottom_end
+addi $t7, $t7, 1
+li $a1, 201
+addi $a0, $t7, 88
+j i_bottom_wall
+i_bottom_end:
+addi $a0, $zero, 105          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 37         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+li $t7, 0
+
+i_top_start:
+jal draw_rect
+beq $a0, 143, i_top_end
+addi $t7, $t7, 1
+li $a1, 37
+addi $a0, $t7, 104
+j i_top_start
+i_top_end:
+addi $a0, $zero, 89          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 65         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 6          # Set the height of the rectangle (in pixels)
+li $t7, 0
+
+i_top_two:                    # The left shoulder (horivontal) of the bottle 
+jal draw_rect
+bge $a0, 111, i_top_two_end
+addi $t7, $t7, 1
+li $a1, 65
+addi $a0, $t7, 88
+j i_top_two
+i_top_two_end:
+addi $a0, $zero, 137          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 65        # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 6          # Set the height of the rectangle (in pixels)
+li $t7, 0
+
+i_top_three:                   # The right shoulder (horivontal) of the bottle
+jal draw_rect
+beq $a0, 159, i_top_three_end
+addi $t7, $t7, 1
+li $a1, 65
+addi $a0, $t7, 136
+j i_top_three
+i_top_three_end:
+addi $a0, $zero, 105          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 39         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 6          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
+li $t7, 0
+
+i_rmouth_start:
+jal draw_rect
+beq $a1, 55, i_rmouth_end
+addi $t7, $t7, 1
+addi $a1, $t7, 39
+j i_rmouth_start
+i_rmouth_end:
+addi $a0, $zero, 113          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 49         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+i_rrmouth_start:
+jal draw_rect
+beq $a1, 67, i_rrmouth_end
+addi $t7, $t7, 1
+addi $a1, $t7, 49
+j i_rrmouth_start
+i_rrmouth_end:
+addi $a0, $zero, 145          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 39         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+i_lmouth_start:
+jal draw_rect
+beq $a1, 55, i_lmouth_end
+addi $t7, $t7, 1
+addi $a1, $t7, 39
+j i_lmouth_start
+i_lmouth_end:
+addi $a0, $zero, 137          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 49         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+li $t7, 0
+
+i_lrmouth_start:
+jal draw_rect
+beq $a1, 67, fill_start
+addi $t7, $t7, 1
+addi $a1, $t7, 49
+j i_lrmouth_start
+i_lrmouth_end:
+
+fill_start:
+addi $a0, $zero, 107          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 49         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a3, $zero, 6
+jal draw_rect
+
+addi $a0, $zero, 141          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 49         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a3, $zero, 6
+jal draw_rect
+fill_end:
+
+############################################ Curving Corners ##################################################
+i_curves:
+addi $a0, $zero, 89         
+addi $a1, $zero, 65 
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ul_curves               # Curves upper left edges
+
+addi $a0, $zero, 88         
+addi $a1, $zero, 64         
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ul_curves               # Curves upper left edges
+
+addi $a0, $zero, 165          # Curves upper right edges
+addi $a1, $zero, 65         
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ur_curves               # Curves upper right edges          
+
+addi $a0, $zero, 166          
+addi $a1, $zero, 64   
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ur_curves               # Curves upper right edges    
+
+addi $a0, $zero, 118
+addi $a1, $zero, 48        
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ur_curves               # Curves upper right edges    
+
+addi $a0, $zero, 117
+addi $a1, $zero, 49        
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ur_curves               # Curves upper right edges    
+
+addi $a0, $zero, 137
+addi $a1, $zero, 49          
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ul_curves               # Curves upper left edges
+
+addi $a0, $zero, 136
+addi $a1, $zero, 48          
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal ul_curves               # Curves upper left edges
+
+addi $a0, $zero, 89
+addi $a1, $zero, 205        
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal bl_curves               # Curves bottom left corners
+
+addi $a0, $zero, 88
+addi $a1, $zero, 206        
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal bl_curves               # Curves bottom left corners
+
+addi $a0, $zero, 105
+addi $a1, $zero, 53        
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal bl_curves               # Curves bottom left corners
+
+addi $a0, $zero, 104
+addi $a1, $zero, 54        
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal bl_curves               # Curves bottom left corners
+
+addi $a0, $zero, 165
+addi $a1, $zero, 205     
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal br_curves               # Curves bottom right corners
+
+addi $a0, $zero, 166
+addi $a1, $zero, 206     
+add $t8, $zero, $zero
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal br_curves               # Curves bottom right corners
+
+addi $a0, $zero, 149
+addi $a1, $zero, 53     
+add $t8, $zero, $s5
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal br_curves               # Curves bottom right corners
+
+addi $a0, $zero, 150
+addi $a1, $zero, 54     
+add $t8, $zero, $s1
+addi $sp, $sp, -4           # move the stack pointer to the next empty spot on the stack
+addi $ra, $ra, 40
+sw $ra, 0($sp)              # store $ra on the stack
+jal br_curves               # Curves bottom right corners
+
+############################################### Highlights & Shading #######################################################
+
+addi $a0, $zero, 89         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 71         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 1          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
+add $t8, $zero, 0xbfb6f2
+li $t7, 0
+
+# Creating the various wall outside the jar
+h_vertical_start: 
+jal draw_rect
+bge $a1, 201, h_vertical_start_end
+addi $t7, $t7, 3
+addi $a1, $t7, 72
+j h_vertical_start
+h_vertical_start_end:
+addi $a0, $zero, 166
+addi $a1, $zero, 71
+li $t7, 0
+j h_vertical_two
+
+h_vertical_two:
+jal draw_rect
+bge $a1, 201, h_vertical_end
+addi $t7, $t7, 3
+addi $a1, $t7, 72
+j h_vertical_two
+h_vertical_end:
+addi $a0, $zero, 94         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 70         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 1          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
+add $t8, $zero, 0x0c0438
+li $t7, 0
+
+s_vertical_start: 
+jal draw_rect
+bge $a1, 201, s_vertical_start_end
+addi $t7, $t7, 3
+addi $a1, $t7, 70
+j s_vertical_start
+s_vertical_start_end:
+addi $a0, $zero, 161
+addi $a1, $zero, 70
+li $t7, 0
+j s_vertical_two
+
+s_vertical_two:
+jal draw_rect
+bge $a1, 201, s_vertical_end
+addi $t7, $t7, 3
+addi $a1, $t7, 70
+j s_vertical_two
+s_vertical_end:
+addi $a0, $zero, 94
+addi $a1, $zero, 201
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 1          # Set the height of the rectangle (in pixels)
+add $t8, $zero, 0x0c0438
+li $t7, 0
+
+s_bottom_wall:
+jal draw_rect
+bge $a0, 154, s_bottom_end
+addi $t7, $t7, 1
+li $a1, 201
+addi $a0, $t7, 95
+j s_bottom_wall
+s_bottom_end:
+addi $a0, $zero, 94
+addi $a1, $zero, 206
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 1          # Set the height of the rectangle (in pixels)
+add $t8, $zero, 0xbfb6f2
+li $t7, 0
+
+h_bottom_wall:
+jal draw_rect
+bge $a0, 154, h_bottom_end
+addi $t7, $t7, 1
+li $a1, 206
+addi $a0, $t7, 95
+j h_bottom_wall
+h_bottom_end:
 
 
 ############################################## Inside Jar ##################################################################
+
 la $a0, Draw_Inside
 jal Access_All
 j end_background
@@ -640,18 +992,18 @@ addi $sp, $sp, -4                    # Store Return Address on the stack
 sw $ra, 0($sp)
 
 add $t5, $a1, $zero
-sll $t0, $a2, 1
+sll $t0, $a2, 3
 
 
-sll $t3, $a3, 1
+sll $t3, $a3, 3
 
-addi $a0, $t0, 24
+addi $a0, $t0, 96
 
-addi $t1, $zero, 18
+addi $t1, $zero, 72
 add $a1, $t1, $t3
 
-addi $a2, $zero, 2          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 2          # Set the height of the rectangle (in pixels)
+addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
 
 lh $t0, 0($t5)  #Read what piece is in place to t0
 li $t1, 14
@@ -687,7 +1039,7 @@ lw $ra, 0($sp)      # Read return address from the stack
 addi $sp, $sp, 4
 jr $ra
             #Comparisons to determine wht to draw
-            
+
 #######################################
 ### Third, I'll addd the filpboards ###
 #######################################
@@ -761,7 +1113,7 @@ jr $ra                      # return to the calling program
 draw_line:
 add $t1, $t8, $zero           # Set the colour of the line (to yellow)
 lw $t0, displayaddress      # $t0 = base address for display
-sll $a1, $a1, 8             # Calculate the Y offset to add to $t0 (multiply $a1 by 128)
+sll $a1, $a1, 10             # Calculate the Y offset to add to $t0 (multiply $a1 by 128)
 sll $a0, $a0, 2             # Calculate the X offset to add to $t0 (multiply $a0 by 4)
 add $t2, $t0, $a1           # Add the Y offset to $t0, store the result in $t2
 add $t2, $t2, $a0           # Add the X offset to $t2 ($t2 now has the starting location of the line in bitmap memory)
@@ -778,6 +1130,100 @@ j line_start
 # End the loop
 line_end:
 # Return to calling program
+jr $ra
+
+################################################### Curving Functions ####################################################################
+
+ul_curves:        # Curves upper left edges
+add $t5 $zero, $a0
+add $t6, $zero, $a1
+addi $a2, $zero, 2
+addi $a3, $zero, 2
+jal draw_rect
+
+addi $a0, $t5, 2         
+add $a1, $zero, $t6         
+addi $a2, $zero, 3
+addi $a3, $zero, 1
+jal draw_rect
+
+add $a0, $zero, $t5         
+addi $a1, $t6, 2         
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+jr $ra
+
+ur_curves:          # Curves upper right edges      
+add $t5 $zero, $a0
+add $t6, $zero, $a1
+addi $a2, $zero, 2
+addi $a3, $zero, 2
+jal draw_rect
+
+subi $a0, $t5, 2         
+add $a1, $zero, $t6         
+addi $a2, $zero, 3
+addi $a3, $zero, 1
+jal draw_rect
+
+addi $a0, $t5, 1          
+addi $a1, $t6, 2         
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect   
+
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+jr $ra
+
+bl_curves:                  # Curves bottom left corners
+add $t5 $zero, $a0
+add $t6, $zero, $a1
+addi $a2, $zero, 2
+addi $a3, $zero, 2
+jal draw_rect
+
+addi $a0, $t5, 2         
+addi $a1, $t6, 1         
+addi $a2, $zero, 3
+addi $a3, $zero, 1
+jal draw_rect
+
+add $a0, $zero, $t5         
+subi $a1, $t6, 2         
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
+jr $ra
+
+br_curves:                   # Curves bottom right corners
+add $t5 $zero, $a0
+add $t6, $zero, $a1
+addi $a2, $zero, 2
+addi $a3, $zero, 2
+jal draw_rect
+
+subi $a0, $t5, 2         
+addi $a1, $t6, 1         
+addi $a2, $zero, 3
+addi $a3, $zero, 1
+jal draw_rect
+
+addi $a0, $t5, 1         
+subi $a1, $t6, 3         
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+lw $ra, 0($sp)              # restore $ra from the stack
+addi $sp, $sp, 4            # move the stack pointer to the new top element
 jr $ra
 
 end_background:
