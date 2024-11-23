@@ -436,7 +436,7 @@ addi $t9, $t9, 16
 addi $a1, $t9, 8
 j repeat_shift
 shift_end:
-j main_jar_start
+j draw_score_board
 
 shift_grid_row:
 bge $a1, 256, shift_end
@@ -773,7 +773,7 @@ li $t7, 0
 
 jal i_vertical_start
 i_wall_end:
-j draw_score_board
+j end_background
 # Creating the various wall outside the jar
 i_vertical_start: 
 jal draw_rect
@@ -1202,7 +1202,6 @@ h_lrmouth_end:
 
 
 
-j i_wall_end
 ############################################## Inside Jar ##################################################################
 
 la $a0, Draw_Inside
@@ -1336,7 +1335,7 @@ add, $t8, $zero, $s2
 
 jal draw_rect
 
-j end_background
+j main_jar_start
 
 #######################################
 ### Fourth, I'll add the petri dish ###
