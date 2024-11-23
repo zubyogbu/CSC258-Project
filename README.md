@@ -408,15 +408,12 @@ repeat_end:
 
 draw_grid_row:              # Creates a row for the checkerboard pattern background
 bge $a1, 256, start_shift  # Once all the normal row are made, a similar process is started for even numbered rows with the pattern shifted 
+beq $a0, 256, new_row     # Create a new row once the X position reaches 60
 jal draw_rect
 
-bge $a0, 248, new_row     # Create a new row once the X position reaches 60
 addi $a0, $a0, 16
 add $a1, $t9, $zero 
 j draw_grid_row
-
-
-
 
 #########################Shifted grid#################################
 
