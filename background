@@ -43,9 +43,9 @@ repeat_end:
 
 draw_grid_row:              # Creates a row for the checkerboard pattern background
 bge $a1, 256, start_shift  # Once all the normal row are made, a similar process is started for even numbered rows with the pattern shifted 
+beq $a0, 256, new_row     # Create a new row once the X position reaches 60
 jal draw_rect
 
-bge $a0, 248, new_row     # Create a new row once the X position reaches 60
 addi $a0, $a0, 16
 add $a1, $t9, $zero 
 j draw_grid_row
@@ -71,7 +71,7 @@ addi $t9, $t9, 16
 addi $a1, $t9, 8
 j repeat_shift
 shift_end:
-j main_jar_start
+j draw_score_board
 
 shift_grid_row:
 bge $a1, 256, shift_end
@@ -407,8 +407,7 @@ add $t8, $zero, $s1
 li $t7, 0
 
 jal i_vertical_start
-i_wall_end:
-j draw_score_board
+
 # Creating the various wall outside the jar
 i_vertical_start: 
 jal draw_rect
@@ -835,70 +834,8 @@ addi $a1, $t7, 55
 j h_lrmouth_start
 h_lrmouth_end:
 
-
-
-j i_wall_end
-############################################## Inside Jar ##################################################################
-
-la $a0, Draw_Inside
-jal Access_All
 j end_background
-Draw_Inside:
-            # $a1 is a reference to the pice to be converted
-            # $a2 is the x
-            # $a3 is the y (bottom is higher)
-            
-addi $sp, $sp, -4                    # Store Return Address on the stack
-sw $ra, 0($sp)
-
-add $t5, $a1, $zero
-sll $t0, $a2, 3
-
-
-sll $t3, $a3, 3
-
-addi $a0, $t0, 96
-
-addi $t1, $zero, 72
-add $a1, $t1, $t3
-
-addi $a2, $zero, 8          # Set the width of the rectangle (in pixels)
-addi $a3, $zero, 8          # Set the height of the rectangle (in pixels)
-
-lh $t0, 0($t5)  #Read what piece is in place to t0
-li $t1, 14
-bge $t0, $t1, Blue
-li $t1, 9
-bge $t0, $t1, Yellow
-li $t1, 4
-bge $t0, $t1, Red
-li $t1, 3
-beq $t0, $t1, BlueVirus
-li $t1, 2
-beq $t0, $t1, Yellow_Virus
-li $t1, 1
-beq $t0, $t1, Red_Virus
-li $t8, 0
-j Inside_Pill_Draw_Rect
-BlueVirus:
-Blue:
-add $t8, $zero, $s5
-j Inside_Pill_Draw_Rect
-Yellow_Virus:
-Yellow:
-add $t8, $zero, $s4
-j Inside_Pill_Draw_Rect
-Red_Virus:
-Red:
-add $t8, $zero, $s3
-
-Inside_Pill_Draw_Rect:
-jal draw_rect
-
-lw $ra, 0($sp)      # Read return address from the stack
-addi $sp, $sp, 4
-jr $ra
-            #Comparisons to determine wht to draw
+############################################## Inside Jar ##################################################################
 
 #######################################
 ### Third, I'll addd the filpboards ###
@@ -971,7 +908,7 @@ add, $t8, $zero, $s2
 
 jal draw_rect
 
-j end_background
+j main_jar_start
 
 #######################################
 ### Fourth, I'll add the petri dish ###
