@@ -20,7 +20,6 @@ li $s3, 0xde126a # magenta, RGB 222, 18, 106
 li $s4, 0xe6a015 # yellow, RGB 230, 160, 21
 li $s5, 0x14bab7 # cyan, 20, 186, 183
 li $s6, 0xe3b19a # beige, RGB 227, 177, 154
-li $s6, 0x9c502d # brown, RGB 156, 80, 45
 
 # Set up the parameters for the rectangle drawing function
 add $a0, $zero, $zero          # Set the X coordinate for the top left corner of the rectangle (in pixels)
@@ -49,9 +48,6 @@ jal draw_rect
 addi $a0, $a0, 16
 add $a1, $t9, $zero 
 j draw_grid_row
-
-
-
 
 #########################Shifted grid#################################
 
@@ -908,11 +904,129 @@ add, $t8, $zero, $s2
 
 jal draw_rect
 
-j main_jar_start
-
 #######################################
 ### Fourth, I'll add the petri dish ###
 #######################################
+
+addi $a0, $zero, 8         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 152         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+add, $t8, $zero, 0x656066
+add $t7, $zero, $zero
+
+petri_start:
+beq $t8, 0x625edb, change_b
+beq $t8, 0x656066, change_i
+
+change_b:
+add, $t8, $zero, 0x656066
+j draw_petri
+
+change_i:
+add, $t8, $zero, 0x625edb
+j draw_petri
+
+draw_petri:
+addi $a2, $zero, 8         # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8         # Set the height of the rectangle (in pixels)
+
+addi $a1, $t7, 152 
+beq $a1, 224, petri_end
+beq $a0, 80, new_p_row
+jal draw_rect
+add $a0, $a0, 8
+j petri_start
+
+new_p_row:
+beq $t8, 0x625edb, row_change_b
+beq $t8, 0x656066, row_change_i
+
+row_change_b:
+add, $t8, $zero, 0x656066
+j continue_row
+
+row_change_i:
+add, $t8, $zero, 0x625edb
+j continue_row
+
+continue_row:
+addi $t7, $t7, 8
+addi $a0, $zero, 8 
+j petri_start
+petri_end:
+
+addi $a0, $zero, 7       
+addi $a1, $zero, 152        
+add $t8, $zero, $zero
+addi $a2, $zero, 1
+addi $a3, $zero, 72 
+jal draw_rect 
+addi $a0, $zero, 80      
+addi $a1, $zero, 152        
+addi $a2, $zero, 1
+addi $a3, $zero, 72 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 152        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 224        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+
+addi $a0, $zero, 8       
+addi $a1, $zero, 153        
+add $t8, $zero, 0xd1c3d4
+addi $a2, $zero, 1
+addi $a3, $zero, 70 
+jal draw_rect 
+addi $a0, $zero, 79      
+addi $a1, $zero, 153        
+addi $a2, $zero, 1
+addi $a3, $zero, 70 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 153        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 223        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+
+addi $a0, $zero, 9       
+addi $a1, $zero, 153        
+add $t8, $zero, 0xd1c3d4
+jal ul_curves
+addi $a0, $zero, 9        
+addi $a1, $zero, 221  
+jal bl_curves
+addi $a0, $zero, 77         
+addi $a1, $zero, 153     
+jal ur_curves
+addi $a0, $zero, 77         
+addi $a1, $zero, 221  
+jal br_curves
+
+addi $a0, $zero, 8       
+addi $a1, $zero, 152        
+add $t8, $zero, $zero
+jal ul_curves
+addi $a0, $zero, 8        
+addi $a1, $zero, 222  
+jal bl_curves
+addi $a0, $zero, 78         
+addi $a1, $zero, 152     
+jal ur_curves
+addi $a0, $zero, 78         
+addi $a1, $zero, 222  
+jal br_curves
+ 
+j main_jar_start
 
 #########################################################
 ### Finally, I'll add the box for Mario and the title ###
