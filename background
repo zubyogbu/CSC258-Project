@@ -1246,6 +1246,244 @@ addi $a3, $zero, 62         # Set the height of the rectangle (in pixels)
 add, $t8, $zero, $zero
 jal draw_rect
 
+#########################
+### Animated Features ###
+#########################
+# Pill is 53 pixels long, 26 pixels wide
+# Two colours
+#addi $a0, $zero, 195        
+#addi $a1, $zero, 61         
+#addi $a2, $zero, 27         
+#addi $a3, $zero, 54   
+#add, $t8, $zero, $zero
+#jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 25         
+addi $a3, $zero, 26   
+add, $t8, $zero, $s3
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 88         
+addi $a2, $zero, 25         
+addi $a3, $zero, 26   
+add, $t8, $zero, $s5
+jal draw_rect
+
+################################# Shading #######################################
+# Top Half
+addi $a0, $zero, 210        
+addi $a1, $zero, 66         
+addi $a2, $zero, 7         
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+addi $a0, $zero, 208        
+addi $a1, $zero, 67         
+addi $a2, $zero, 11         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+addi $a0, $zero, 206        
+addi $a1, $zero, 68         
+addi $a2, $zero, 14         
+addi $a3, $zero, 21   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+# Bottom Half
+addi $a0, $zero, 206        
+addi $a1, $zero, 88         
+addi $a2, $zero, 14         
+addi $a3, $zero, 20   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 207       
+addi $a1, $zero, 108         
+addi $a2, $zero, 12         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 208       
+addi $a1, $zero, 109         
+addi $a2, $zero, 10         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 210       
+addi $a1, $zero, 110         
+addi $a2, $zero, 6         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+
+jal draw_rect
+
+####################### Detailing #########################
+# Top 
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 2         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 219       
+addi $a1, $zero, 62         
+addi $a2, $zero, 3         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+# Middle Line - Left Side
+addi $a0, $zero, 196        
+addi $a1, $zero, 86         
+addi $a2, $zero, 2         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 197        
+addi $a1, $zero, 87         
+addi $a2, $zero, 4         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 198        
+addi $a1, $zero, 88         
+addi $a2, $zero, 21         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+# Middle Line - Right Side
+addi $a0, $zero, 219        
+addi $a1, $zero, 86         
+addi $a2, $zero, 2         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 87         
+addi $a2, $zero, 4         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 220        
+addi $a1, $zero, 87         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $s5
+jal draw_rect
+
+# Bottom
+addi $a0, $zero, 196        
+addi $a1, $zero, 110         
+addi $a2, $zero, 2         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 113         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 219       
+addi $a1, $zero, 110         
+addi $a2, $zero, 3         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 113         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+################################# Highlights ####################################
+# Top Half
+addi $t6, $s3, 0x1f1f1f 
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 66         
+addi $a2, $zero, 1         
+addi $a3, $zero, 20   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 197        
+addi $a1, $zero, 65         
+addi $a2, $zero, 3         
+addi $a3, $zero, 2   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 198        
+addi $a1, $zero, 63         
+addi $a2, $zero, 4         
+addi $a3, $zero, 2   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 201        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 207        
+addi $a1, $zero, 62         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
+# Bottom Half 
+addi $t6, $s5, 0x1f1f1f 
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 87         
+addi $a2, $zero, 1         
+addi $a3, $zero, 10   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 98         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
 j main_jar_start
 
 #######################
