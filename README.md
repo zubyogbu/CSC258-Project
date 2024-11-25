@@ -385,7 +385,6 @@ li $s3, 0xde126a # magenta, RGB 222, 18, 106
 li $s4, 0xe6a015 # yellow, RGB 230, 160, 21
 li $s5, 0x14bab7 # cyan, 20, 186, 183
 li $s6, 0xe3b19a # beige, RGB 227, 177, 154
-li $s6, 0x9c502d # brown, RGB 156, 80, 45
 
 # Set up the parameters for the rectangle drawing function
 add $a0, $zero, $zero          # Set the X coordinate for the top left corner of the rectangle (in pixels)
@@ -769,8 +768,7 @@ add $t8, $zero, $s1
 li $t7, 0
 
 jal i_vertical_start
-i_wall_end:
-j end_background
+
 # Creating the various wall outside the jar
 i_vertical_start: 
 jal draw_rect
@@ -1197,8 +1195,6 @@ addi $a1, $t7, 55
 j h_lrmouth_start
 h_lrmouth_end:
 
-
-
 ############################################## Inside Jar ##################################################################
 
 la $a0, Draw_Inside
@@ -1298,6 +1294,208 @@ add, $t8, $zero, $s2
 
 jal draw_rect
 
+############################################### Score Board Text ################################################### 
+
+#Top Score text position (Actual score is 8 pixels below)
+# X = 16, Y = 48
+add, $t8, $zero, $zero
+# Letter T
+addi $a0, $zero, 17
+addi $a1, $zero, 48
+addi $a2, $zero, 7
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 19
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+# Letter O
+addi $a0, $zero, 26
+addi $a1, $zero, 48
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 26
+addi $a1, $zero, 54
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 25
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 29
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+# Letter P
+addi $a0, $zero, 34
+addi $a1, $zero, 48
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 34
+addi $a1, $zero, 51
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 32
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 37
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+
+#Score text position (Actual score is 8 pixels below)
+# X = 16, Y = 72
+# Letter S
+addi $a0, $zero, 21
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 18
+addi $a1, $zero, 72
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 18
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 18
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 21
+addi $a1, $zero, 75
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 18
+addi $a1, $zero, 78
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 18
+addi $a1, $zero, 77
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+# Letter C
+addi $a0, $zero, 28
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 24
+addi $a1, $zero, 72
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 24
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 24
+addi $a1, $zero, 75
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 28
+addi $a1, $zero, 77
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 24
+addi $a1, $zero, 78
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+# Letter O
+addi $a0, $zero, 32
+addi $a1, $zero, 72
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 32
+addi $a1, $zero, 78
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 32
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 36
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+# Letter R
+addi $a0, $zero, 42
+addi $a1, $zero, 72
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 42
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 40
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 45
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 43
+addi $a1, $zero, 76
+addi $a2, $zero, 1
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 44
+addi $a1, $zero, 77
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+# Letter E
+addi $a0, $zero, 48
+addi $a1, $zero, 72
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 48
+addi $a1, $zero, 78
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 48
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 48
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
 ############################################### Second Board #######################################################
 
 addi $a0, $zero, 176         # Set the X coordinate for the top left corner of the rectangle (in pixels)
@@ -1332,16 +1530,389 @@ add, $t8, $zero, $s2
 
 jal draw_rect
 
-j main_jar_start
-
 #######################################
 ### Fourth, I'll add the petri dish ###
 #######################################
+
+addi $a0, $zero, 8         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 152         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+add, $t8, $zero, 0x656066
+add $t7, $zero, $zero
+
+petri_start:
+beq $t8, 0x625edb, change_b
+beq $t8, 0x656066, change_i
+
+change_b:
+add, $t8, $zero, 0x656066
+j draw_petri
+
+change_i:
+add, $t8, $zero, 0x625edb
+j draw_petri
+
+draw_petri:
+addi $a2, $zero, 8         # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 8         # Set the height of the rectangle (in pixels)
+
+addi $a1, $t7, 152 
+beq $a1, 224, petri_end
+beq $a0, 80, new_p_row
+jal draw_rect
+add $a0, $a0, 8
+j petri_start
+
+new_p_row:
+beq $t8, 0x625edb, row_change_b
+beq $t8, 0x656066, row_change_i
+
+row_change_b:
+add, $t8, $zero, 0x656066
+j continue_row
+
+row_change_i:
+add, $t8, $zero, 0x625edb
+j continue_row
+
+continue_row:
+addi $t7, $t7, 8
+addi $a0, $zero, 8 
+j petri_start
+petri_end:
+
+addi $a0, $zero, 7       
+addi $a1, $zero, 152        
+add $t8, $zero, $zero
+addi $a2, $zero, 1
+addi $a3, $zero, 72 
+jal draw_rect 
+addi $a0, $zero, 80      
+addi $a1, $zero, 152        
+addi $a2, $zero, 1
+addi $a3, $zero, 72 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 152        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 224        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+
+addi $a0, $zero, 8       
+addi $a1, $zero, 153        
+add $t8, $zero, 0xd1c3d4
+addi $a2, $zero, 1
+addi $a3, $zero, 70 
+jal draw_rect 
+addi $a0, $zero, 79      
+addi $a1, $zero, 153        
+addi $a2, $zero, 1
+addi $a3, $zero, 70 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 153        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+addi $a0, $zero, 8       
+addi $a1, $zero, 223        
+addi $a2, $zero, 72
+addi $a3, $zero, 1 
+jal draw_rect 
+
+addi $a0, $zero, 9       
+addi $a1, $zero, 153        
+add $t8, $zero, 0xd1c3d4
+jal ul_curves
+addi $a0, $zero, 9        
+addi $a1, $zero, 221  
+jal bl_curves
+addi $a0, $zero, 77         
+addi $a1, $zero, 153     
+jal ur_curves
+addi $a0, $zero, 77         
+addi $a1, $zero, 221  
+jal br_curves
+
+addi $a0, $zero, 8       
+addi $a1, $zero, 152        
+add $t8, $zero, $zero
+jal ul_curves
+addi $a0, $zero, 8        
+addi $a1, $zero, 222  
+jal bl_curves
+addi $a0, $zero, 78         
+addi $a1, $zero, 152     
+jal ur_curves
+addi $a0, $zero, 78         
+addi $a1, $zero, 222  
+jal br_curves
 
 #########################################################
 ### Finally, I'll add the box for Mario and the title ###
 #########################################################
 
+addi $a0, $zero, 176         # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 56         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 64         # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 64         # Set the height of the rectangle (in pixels)
+add, $t8, $zero, $s4
+jal draw_rect
+
+addi $a0, $zero, 177          # Set the X coordinate for the top left corner of the rectangle (in pixels)
+addi $a1, $zero, 57         # Set the Y coordinate for the top left corner of the rectangle (in pixels)
+addi $a2, $zero, 62         # Set the width of the rectangle (in pixels)
+addi $a3, $zero, 62         # Set the height of the rectangle (in pixels)
+add, $t8, $zero, $zero
+jal draw_rect
+
+#########################
+### Animated Features ###
+#########################
+# Pill is 53 pixels long, 26 pixels wide
+# Two colours
+#addi $a0, $zero, 195        
+#addi $a1, $zero, 61         
+#addi $a2, $zero, 27         
+#addi $a3, $zero, 54   
+#add, $t8, $zero, $zero
+#jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 25         
+addi $a3, $zero, 26   
+add, $t8, $zero, $s3
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 88         
+addi $a2, $zero, 25         
+addi $a3, $zero, 26   
+add, $t8, $zero, $s5
+jal draw_rect
+
+################################# Shading #######################################
+# Top Half
+addi $a0, $zero, 210        
+addi $a1, $zero, 66         
+addi $a2, $zero, 7         
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+addi $a0, $zero, 208        
+addi $a1, $zero, 67         
+addi $a2, $zero, 11         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+addi $a0, $zero, 206        
+addi $a1, $zero, 68         
+addi $a2, $zero, 14         
+addi $a3, $zero, 21   
+add, $t8, $zero, 0x990030
+jal draw_rect
+
+# Bottom Half
+addi $a0, $zero, 206        
+addi $a1, $zero, 88         
+addi $a2, $zero, 14         
+addi $a3, $zero, 20   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 207       
+addi $a1, $zero, 108         
+addi $a2, $zero, 12         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 208       
+addi $a1, $zero, 109         
+addi $a2, $zero, 10         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+jal draw_rect
+
+addi $a0, $zero, 210       
+addi $a1, $zero, 110         
+addi $a2, $zero, 6         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x4d6df3
+
+jal draw_rect
+
+####################### Detailing #########################
+# Top 
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 2         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 219       
+addi $a1, $zero, 62         
+addi $a2, $zero, 3         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+# Middle Line - Left Side
+addi $a0, $zero, 196        
+addi $a1, $zero, 86         
+addi $a2, $zero, 2         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 197        
+addi $a1, $zero, 87         
+addi $a2, $zero, 4         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 198        
+addi $a1, $zero, 88         
+addi $a2, $zero, 21         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+# Middle Line - Right Side
+addi $a0, $zero, 219        
+addi $a1, $zero, 86         
+addi $a2, $zero, 2         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 87         
+addi $a2, $zero, 4         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 220        
+addi $a1, $zero, 87         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $s5
+jal draw_rect
+
+# Bottom
+addi $a0, $zero, 196        
+addi $a1, $zero, 110         
+addi $a2, $zero, 2         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 113         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 219       
+addi $a1, $zero, 110         
+addi $a2, $zero, 3         
+addi $a3, $zero, 3   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 113         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+################################# Highlights ####################################
+# Top Half
+addi $t6, $s3, 0x1f1f1f 
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 66         
+addi $a2, $zero, 1         
+addi $a3, $zero, 20   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 197        
+addi $a1, $zero, 65         
+addi $a2, $zero, 3         
+addi $a3, $zero, 2   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 198        
+addi $a1, $zero, 63         
+addi $a2, $zero, 4         
+addi $a3, $zero, 2   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 201        
+addi $a1, $zero, 62         
+addi $a2, $zero, 5         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 207        
+addi $a1, $zero, 62         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
+# Bottom Half 
+addi $t6, $s5, 0x1f1f1f 
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 87         
+addi $a2, $zero, 1         
+addi $a3, $zero, 10   
+add, $t8, $zero, $t6
+jal draw_rect
+
+addi $a0, $zero, 196        
+addi $a1, $zero, 98         
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $t6
+jal draw_rect
+
+j main_jar_start
+
+#######################
+### Other Functions ###
+#######################
 #
 #  The rectangle drawing function
 #
