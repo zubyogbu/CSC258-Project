@@ -1,6 +1,8 @@
 .data
-dummy_var: .space 500000   # Reserve 50000 bytes for the dummy variable (adjust size as needed)
-displayaddress:     .word       0x10008000
+dummy_var:  .space 500000   # Reserve 50000 bytes for the dummy variable (adjust size as needed)
+old_display_address:    .space  262144
+doubledisplayaddress:   .word   0x10008000
+displayaddress:     .word       0x1008a120
 Board: .half    0:128   # array of 128 half words (8 bits) used for storing the board. X,Y position 0,0 
                         # is element 0. Y incemets every 8 words (8*8 = 64 bits). The top left part of the 
                         # board is 0,0
@@ -59,10 +61,10 @@ main:
 addi $t0 $zero 1 # Temporary testing
 la $t1 Board
 addi $t0, $zero, 5
-
+la $t0, displayaddress
 sll $t2, $t0, 1     # Update the offset to be correct
 
-
+la $t0, old_display_address
 #jal Generate_Piece
 
 # Initialize
@@ -85,6 +87,7 @@ syscall
 jal Movement_Determiner  # Update Piece Positions
 # Check if the game is over and exit
 jal Draw_Graphics # Draw the new board
+jal Double_Buffer
 # Play secion of Music?
 # Restart Loop
 # Start a new game?
@@ -1040,7 +1043,21 @@ lw $ra, 0($sp)      # Read return address from the stack
 addi $sp, $sp, 4
 jr $ra              # Exit function
 
+Double_Buffer:      # ----------------------$$$$$$-----------------------------------------------------
+                    # Loop through every element in the display and copy it to the double buffer
 
+lw $t0, displayaddress
+lw $t1, doubledisplayaddress
+addi $t5, $t0, 262144
+Start_Double_Buffer_Loop:
+lw $t2, 0($t0)
+sw $t2, 0($t1)
+addi $t0, $t0, 4
+addi $t1, $t1, 4
+bne $t5, $t0, Start_Double_Buffer_Loop
+
+
+jr $ra
 # ...
 ########################################
 ### First, I'll draw the square grid ###
