@@ -1,7 +1,7 @@
 .data
 dummy_var: .space 500000   # Reserve 50000 bytes for the dummy variable (adjust size as needed)
 displayaddress:     .word       0x10008000
-Board: .half 0:128      # array of 128 half words (8 bits) used for storing the board. X,Y position 0,0 
+Board: .half    0:128   # array of 128 half words (8 bits) used for storing the board. X,Y position 0,0 
                         # is element 0. Y incemets every 8 words (8*8 = 64 bits). The top left part of the 
                         # board is 0,0
                         
@@ -39,10 +39,17 @@ capsule_y:          .word       0
 frame_count:        .word       0
 frame_speed:        .word       0
 keyboard_address:   .word       0xffff0000
+
+Score:              .word       0
+Viruses:            .word       0
+Red_Viruses:        .word       0
+Yellow_Viruses:     .word       0
+Blue_Viruses:       .word       0
+
 State: .byte 0:1        # This byte tracks whether the next check should be for generate a new piece (0),
                         # deleting pieces(1), gravity movement (2), player controled movement (3)
                         # Game Over (4)
-
+                        
 capsule_type:       .byte       0
 capsule_rotation:   .byte       0
 next_capsule:       .byte       0   # Number refereing to which piece will be made next. Order
@@ -108,24 +115,113 @@ sw, $t0, frame_count
 jr $ra  
 
 Check_Cleared_Rows_and_Columns:
-# Count Viruses
-# Check and clear rows
 
-# Check and clear columns
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
+
+sw $zero, Viruses       # Set Viruses to 0
+sw $zero, Red_Viruses
+sw $zero, Yellow_Viruses
+sw $zero, Blue_Viruses
+la $a0, Count_Viruses
+jal Access_All      # Count Viruses
+
+j Check_Rows        # Check and clear rows
+Post_Check_Rows:
+#j Check_Columns     # Check and clear columns
 # Normalize broken pills
 # Count viruses
 # Add Points
+j Check_Cleared_Return
 
 Check_Rows:
+li $t0, 0   # Y Position variable
+
+Check_Rows_Start_y_Loop:
+li $t1, 1   # X position variable
 # Store start point, colour, length of current sequence
-# Increment position, check if colour matches
-# If colour matches, increment length 
-# If colour doesnt match, check if length is at least 4. If it is clear up until the current pos. then
-# reset colour to new colour and start point to new start point
+la $t2, Board
+sll $t3, $t0, 4
+add $s0, $t2, $t3       # $s0 is the start of the current sequence
+jal Get_Colour_Of_Piece
+add $s1, $v0, $zero     # $s1 is the colour of the piece
+li $s2, 1               # $s2 is the length of the current sequence
+Check_rows_start_x_loop:
+
+la $t2, Board
+sll $t3, $t0, 4
+add $t2, $t2, $t3
+sll $t3, $t1, 1
+add $t2, $t2, $t3   # Reference to the current piece
+add $a1, $t2, $zero
+jal Get_Colour_Of_Piece   # Get piece and check if colour matches
+
+beq $v0, $s1, Row_Continues# If colour matches, increment length 
+j Row_Broken
+Row_Continues:  # If the colour matches, increment the length
+addi $s2, $s2, 1
+j Check_Rows_End_X_Loop
+Row_Broken:
+li $t3 4    # If colour doesnt match, check if length is at least 4. If 
+            # it is clear up until the current pos. then
+            # reset colour to new colour and start point to new start point'
+bge $s2, $t3, Prep_Clear_Row
+jal Reset_Colour_and_Length
+j Check_Rows_End_X_Loop
+
+
+Prep_Clear_Row:
+beq $s1, $zero, Prep_Clear_Row_0
+add $a1, $s0, $zero
+subi $a2, $t2, 2
+jal Clear_Row
+jal Reset_Colour_and_Length
+j Check_Rows_End_X_Loop
+
+Prep_Clear_Row_0:
+jal Reset_Colour_and_Length
+j Check_Rows_End_X_Loop
+
+Check_Rows_End_X_Loop:
+addi $t1, $t1, 1
+li $t3, 7
+ble $t1, $t3, Check_rows_start_x_loop
 # After reaching the end of a row, check to see if it is at least 4, if so, clear is
-Clear_Row:
+li $t3 4    # If colour doesnt match, check if length is at least 4. If 
+            # it is clear up until the current pos. then
+            # reset colour to new colour and start point to new start point'
+bge $s2, $t3, Prep_Clear_Row_Post_loop
+jal Reset_Colour_and_Length
+j Check_Rows_End_Y_Loop
+
+Prep_Clear_Row_Post_loop:
+beq $s1, $zero Prep_Clear_Row_Post_loop_0
+add $a1, $s0, $zero
+add $a2, $t2, $zero
+jal Clear_Row
+jal Reset_Colour_and_Length
+j Check_Rows_End_Y_Loop
+
+Prep_Clear_Row_Post_loop_0:
+jal Reset_Colour_and_Length
+j Check_Rows_End_Y_Loop
+
+Check_Rows_End_Y_Loop:
+addi $t0, $t0, 1
+li $t2, 15
+ble $t0, $t2, Check_Rows_Start_y_Loop
+j Post_Check_Rows
+
+Clear_Row:  # a1, a2 are start and end point
 # Loop over the points from start point to end point
-# Set values to 0
+Clear_Row_Start_loop:
+sh $zero, 0($a1)    # Set values to 0
+beq $a1, $a2, Clear_Row_Return
+addi $a1, $a1, 2
+j Clear_Row_Start_loop
+Clear_Row_Return:
+jr $ra
+
 Check_Columns:
 # Store start point, colour, length of current sequence
 # Increment position, check if colour matches
@@ -134,7 +230,86 @@ Check_Columns:
 # reset colour to new colour and start point to new start point
 # After reaching the end of a column, check to see if it is at least 4, if so, clear is
 Clear_column:
-#loop over the
+# Loop over the points from start point to end point
+# Set values to 0
+
+Check_Cleared_Return:
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
+
+Reset_Colour_and_Length:
+add $s1, $v0, $zero
+li $s2, 1
+jr $ra
+Get_Colour_Of_Piece:    # Given $a1  as position of piece, returns the pieces colour 
+                        # Should not effect anything other than $t8, $t9 
+                        # Returns in $v0
+lh $t8, 0($a1)
+beq $t8, $zero, Colour_Zero
+li $t9, 1
+beq $t8, $t9, Colour_One
+li $t9, 2
+beq $t8, $t9, Colour_Two
+li $t9, 3
+beq $t8, $t9, Colour_Three
+li $t9, 8
+ble $t8, $t9, Colour_One
+li $t9, 13
+ble $t8, $t9, Colour_Two
+li $t9, 18
+ble $t8, $t9, Colour_Three
+j Colour_Zero
+Colour_Zero:
+li $v0, 0
+j Colour_Return
+Colour_One:
+li $v0, 1
+j Colour_Return
+Colour_Two:
+li $v0, 2
+j Colour_Return
+Colour_Three:
+li $v0, 3
+j Colour_Return
+Colour_Return:
+jr $ra  
+
+Count_Viruses:  # $a1 is a position, determine if it is a virus, if it is, increment the 
+                # corresponding virus counts
+lh $t0, 0($a1)
+li $t1, 1
+beq $t0, $t1, Count_Red_Virus
+li $t1, 2
+beq $t0, $t1, Count_Yellow_Virus
+li $t1, 3
+beq $t0, $t1, Count_Blue_Virus
+j Count_Return
+
+Count_Red_Virus:
+lw, $t1, Red_Viruses
+add $t0, $t0, $t1
+sw $t0, Red_Viruses
+j Count_Viruses
+Count_Yellow_Virus:
+lw, $t1, Yellow_Viruses
+add $t0, $t0, $t1
+sw $t0, Yellow_Viruses
+j Count_Viruses
+Count_Blue_Virus:
+lw, $t1, Blue_Viruses
+add $t0, $t0, $t1
+sw $t0, Blue_Viruses
+j Count_Viruses
+Count_Virus:
+lw, $t1, Viruses
+add $t0, $t0, $t1
+sw $t0, Viruses
+
+Count_Return:
+jr $ra
+
+
 Movement_Determiner:    # Reads the state and determines what function should be called
                         # Either calling gravity, player control, clearing rows, or 
                         # generating a new piece.
@@ -169,6 +344,7 @@ jal Generate_Piece
 
 j Movement_Determiner_Return
 Movement_Clear_Rows:
+jal Check_Cleared_Rows_and_Columns
 li $t0, 2
 sb $t0, State
 j Movement_Determiner_Return
