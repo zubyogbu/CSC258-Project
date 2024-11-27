@@ -43,7 +43,7 @@ frame_speed:        .word       0
 keyboard_address:   .word       0xffff0000
 
 Score:              .word       0
-Top_Score:          .word       999999
+Top_Score:          .word       0
 Viruses:            .word       0
 Red_Viruses:        .word       0
 Yellow_Viruses:     .word       0
@@ -2202,7 +2202,8 @@ lw $t5, Top_Score
 
 check_score:
 li $t0, 10
-beq $t5, 0, end_top_score
+bge $t9, 56, end_top_score
+beq $t5, 0, show_0
 div $t5, $t0   # Divide $t0 by 10
 mfhi $t6       # the last digit (remainder)
 mflo $t5       # the quotient
@@ -2528,7 +2529,8 @@ lw $t5, Score
 
 check_curr_score:
 li $t0, 10
-beq $t5, 0, end_curr_score
+bge $t9, 56, end_curr_score
+beq $t5, 0, show_curr_0
 div $t5, $t0   # Divide $t0 by 10
 mfhi $t6       # the last digit (remainder)
 mflo $t5       # the quotient
