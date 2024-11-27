@@ -48,6 +48,11 @@ Red_Viruses:        .word       0
 Yellow_Viruses:     .word       0
 Blue_Viruses:       .word       0
 
+animation_frame:    .word       0   
+anim_frame_r:       .word       0   
+anim_frame_b:       .word       0   
+anim_frame_y:       .word       0   
+
 State: .byte 0:1        # This byte tracks whether the next check should be for generate a new piece (0),
                         # deleting pieces(1), gravity movement (2), player controled movement (3)
                         # Game Over (4)
@@ -1919,14 +1924,14 @@ bge $t0, $t1, Yellow
 li $t1, 4
 bge $t0, $t1, Red
 li $t1, 3
-beq $t0, $t1, BlueVirus
+beq $t0, $t1, Blue_Virus
 li $t1, 2
 beq $t0, $t1, Yellow_Virus
 li $t1, 1
 beq $t0, $t1, Red_Virus
 li $t8, 0
 j Inside_Pill_Draw_Rect
-BlueVirus:
+Blue_Virus:
 Blue:
 add $t8, $zero, $s5
 j Inside_Pill_Draw_Rect
@@ -2726,6 +2731,8 @@ jal draw_rect
 #########################
 ### Animated Features ###
 #########################
+Change_Pill_Colour:
+lb $s2, next_capsule
 # Pill is 53 pixels long, 26 pixels wide
 # Two colours
 #addi $a0, $zero, 195        
@@ -2734,71 +2741,135 @@ jal draw_rect
 #addi $a3, $zero, 54   
 #add, $t8, $zero, $zero
 #jal draw_rect
+beq $s2, 0, assign_zero
+beq $s2, 1, assign_one
+beq $s2, 2, assign_two
+beq $s2, 3, assign_three
+beq $s2, 4, assign_four
+beq $s2, 5, assign_five
 
+assign_zero:
+add $s6, $zero, $s3
+add $s7, $zero, $s3
+j draw_pill
+
+assign_one:
+add $s6, $zero, $s5
+add $s7, $zero, $s5
+j draw_pill
+
+assign_two:
+add $s6, $zero, $s4
+add $s7, $zero, $s4
+j draw_pill
+
+assign_three:
+add $s6, $zero, $s3
+add $s7, $zero, $s5
+j draw_pill
+
+assign_four:
+add $s6, $zero, $s3
+add $s7, $zero, $s4
+j draw_pill
+
+assign_five:
+add $s6, $zero, $s4
+add $s7, $zero, $s5
+j draw_pill
+
+draw_pill:
 addi $a0, $zero, 196        
 addi $a1, $zero, 62         
 addi $a2, $zero, 25         
 addi $a3, $zero, 26   
-add, $t8, $zero, $s3
+add, $t8, $zero, $s6
 jal draw_rect
 
 addi $a0, $zero, 196        
 addi $a1, $zero, 88         
 addi $a2, $zero, 25         
 addi $a3, $zero, 26   
-add, $t8, $zero, $s5
+add, $t8, $zero, $s7
 jal draw_rect
 
 ################################# Shading - Pill #######################################
 # Top Half
+beq $s6, $s3, red_shade_top
+beq $s6, $s5, blue_shade_top
+beq $s6, $s4, yellow_shade_top
+
+red_shade_top:
+add, $t8, $zero, 0x990030
+j begin_shade
+
+blue_shade_top:
+add, $t8, $zero, 0x324ec2
+j begin_shade
+
+yellow_shade_top:
+add, $t8, $zero, 0x843eb6
+j begin_shade
+
+
+begin_shade:
 addi $a0, $zero, 210        
 addi $a1, $zero, 66         
 addi $a2, $zero, 7         
 addi $a3, $zero, 2   
-add, $t8, $zero, 0x990030
 jal draw_rect
 
 addi $a0, $zero, 208        
 addi $a1, $zero, 67         
 addi $a2, $zero, 11         
 addi $a3, $zero, 1   
-add, $t8, $zero, 0x990030
 jal draw_rect
 
 addi $a0, $zero, 206        
 addi $a1, $zero, 68         
 addi $a2, $zero, 14         
 addi $a3, $zero, 21   
-add, $t8, $zero, 0x990030
 jal draw_rect
 
+beq $s7, $s3, red_shade_bottom
+beq $s7, $s5, blue_shade_bottom
+beq $s7, $s4, yellow_shade_bottom
+red_shade_bottom:
+add, $t8, $zero, 0x990030
+j begin_shade_b
+
+blue_shade_bottom:
+add, $t8, $zero, 0x324ec2
+j begin_shade_b
+
+yellow_shade_bottom:
+add, $t8, $zero, 0x843eb6
+j begin_shade_b
+
 # Bottom Half
+begin_shade_b:
 addi $a0, $zero, 206        
 addi $a1, $zero, 88         
 addi $a2, $zero, 14         
 addi $a3, $zero, 20   
-add, $t8, $zero, 0x4d6df3
 jal draw_rect
 
 addi $a0, $zero, 207       
 addi $a1, $zero, 108         
 addi $a2, $zero, 12         
 addi $a3, $zero, 1   
-add, $t8, $zero, 0x4d6df3
 jal draw_rect
 
 addi $a0, $zero, 208       
 addi $a1, $zero, 109         
 addi $a2, $zero, 10         
 addi $a3, $zero, 1   
-add, $t8, $zero, 0x4d6df3
 jal draw_rect
 
 addi $a0, $zero, 210       
 addi $a1, $zero, 110         
 addi $a2, $zero, 6         
 addi $a3, $zero, 1   
-add, $t8, $zero, 0x4d6df3
 
 jal draw_rect
 
@@ -2873,7 +2944,7 @@ addi $a0, $zero, 220
 addi $a1, $zero, 87         
 addi $a2, $zero, 1         
 addi $a3, $zero, 1   
-add, $t8, $zero, $s5
+add, $t8, $zero, $s7
 jal draw_rect
 
 # Bottom
@@ -2906,62 +2977,996 @@ add, $t8, $zero, $zero
 jal draw_rect
 
 ################################# Highlights - Pill ####################################
-# Top Half
-addi $t6, $s3, 0x1f1f1f 
+beq $s6, $s3, red_high
+beq $s6, $s5, blue_high
+beq $s6, $s4, yellow_high
 
+red_high:
+add, $t8, $zero, 0xfd3189
+j begin_high
+
+blue_high:
+add, $t8, $zero, 0x33d9d6
+j begin_high
+
+yellow_high:
+add, $t8, $zero, 0xe6dbbf
+j begin_high
+
+# Top Half
+begin_high:
 addi $a0, $zero, 196        
-addi $a1, $zero, 66         
+addi $a1, $zero, 65         
 addi $a2, $zero, 1         
-addi $a3, $zero, 20   
-add, $t8, $zero, $t6
+addi $a3, $zero, 21   
 jal draw_rect
 
 addi $a0, $zero, 197        
 addi $a1, $zero, 65         
 addi $a2, $zero, 3         
 addi $a3, $zero, 2   
-add, $t8, $zero, $t6
 jal draw_rect
 
 addi $a0, $zero, 198        
 addi $a1, $zero, 63         
 addi $a2, $zero, 4         
 addi $a3, $zero, 2   
-add, $t8, $zero, $t6
 jal draw_rect
 
 addi $a0, $zero, 201        
 addi $a1, $zero, 62         
 addi $a2, $zero, 5         
 addi $a3, $zero, 1   
-add, $t8, $zero, $t6
 jal draw_rect
 
 addi $a0, $zero, 207        
 addi $a1, $zero, 62         
 addi $a2, $zero, 1         
 addi $a3, $zero, 1   
-add, $t8, $zero, $t6
 jal draw_rect
 
-# Bottom Half 
-addi $t6, $s5, 0x1f1f1f 
+beq $s7, $s3, red_high_bottom
+beq $s7, $s5, blue_high_bottom
+beq $s7, $s4, yellow_high_bottom
 
+red_high_bottom:
+add, $t8, $zero, 0xfd3189
+j begin_high_b
+
+blue_high_bottom:
+add, $t8, $zero, 0x33d9d6
+j begin_high_b
+
+yellow_high_bottom:
+add, $t8, $zero, 0xe6dbbf
+j begin_high_b
+
+begin_high_b:
+# Bottom Half 
 addi $a0, $zero, 196        
 addi $a1, $zero, 87         
 addi $a2, $zero, 1         
 addi $a3, $zero, 10   
-add, $t8, $zero, $t6
 jal draw_rect
 
 addi $a0, $zero, 196        
 addi $a1, $zero, 98         
 addi $a2, $zero, 1         
 addi $a3, $zero, 1   
-add, $t8, $zero, $t6
 jal draw_rect
 
+######################################################################### Pill - "M" #######################################################################################
+lw $t9, animation_frame
+
+beq $t9, 0, Pill_Frame_1
+beq $t9, 1, Pill_Frame_2
+beq $t9, 2, Pill_Frame_3
+beq $t9, 3, Pill_Frame_4
+beq $t9, 4, Pill_Frame_5
+beq $t9, 5, Pill_Frame_6
+
+li $t9, 0
+sw $t9, animation_frame
+j Pill_Frame_1
+
+Pill_Frame_1:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+addi $a0, $zero, 208     
+addi $a1, $zero, 74        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 208   
+addi $a1, $zero, 75      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 207    
+addi $a1, $zero, 73        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 207   
+addi $a1, $zero, 74      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+addi $a0, $zero, 209    
+addi $a1, $zero, 73        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 209   
+addi $a1, $zero, 74     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 206    
+addi $a1, $zero, 72        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 206    
+addi $a1, $zero, 73      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 72        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 73      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 205    
+addi $a1, $zero, 71        
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 205    
+addi $a1, $zero, 73      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 211    
+addi $a1, $zero, 71        
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 211     
+addi $a1, $zero, 73      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 204    
+addi $a1, $zero, 73       
+addi $a2, $zero, 1         
+addi $a3, $zero, 10 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 204    
+addi $a1, $zero, 76      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 212    
+addi $a1, $zero, 73      
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 212    
+addi $a1, $zero, 76      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 203    
+addi $a1, $zero, 76      
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 203    
+addi $a1, $zero, 79      
+addi $a2, $zero, 1         
+addi $a3, $zero, 1 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 213    
+addi $a1, $zero, 76    
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 213    
+addi $a1, $zero, 79      
+addi $a2, $zero, 1         
+addi $a3, $zero, 1 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 202   
+addi $a1, $zero, 79        
+addi $a2, $zero, 1         
+addi $a3, $zero, 2
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 214    
+addi $a1, $zero, 79     
+addi $a2, $zero, 1         
+addi $a3, $zero, 2 
+add, $t8, $zero, $zero
+jal draw_rect
+
+R_Pill_Frame_1:
+addi $a0, $zero, 208     
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 208   
+addi $a1, $zero, 98     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 207    
+addi $a1, $zero, 98       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 207   
+addi $a1, $zero, 99     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+addi $a0, $zero, 209    
+addi $a1, $zero, 98        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 209   
+addi $a1, $zero, 99     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 206    
+addi $a1, $zero, 98       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 206    
+addi $a1, $zero, 100     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 98       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 100     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 205    
+addi $a1, $zero, 95       
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 205    
+addi $a1, $zero, 98      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 211    
+addi $a1, $zero, 95        
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 211     
+addi $a1, $zero, 98      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 204    
+addi $a1, $zero, 93      
+addi $a2, $zero, 1         
+addi $a3, $zero, 10 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 204    
+addi $a1, $zero, 95     
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 212    
+addi $a1, $zero, 93     
+addi $a2, $zero, 1         
+addi $a3, $zero, 10  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 212    
+addi $a1, $zero, 95     
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 203    
+addi $a1, $zero, 94    
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 203    
+addi $a1, $zero, 96      
+addi $a2, $zero, 1         
+addi $a3, $zero, 1 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 213    
+addi $a1, $zero, 94    
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 213    
+addi $a1, $zero, 96     
+addi $a2, $zero, 1         
+addi $a3, $zero, 1 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 202   
+addi $a1, $zero, 95        
+addi $a2, $zero, 1         
+addi $a3, $zero, 2
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 214    
+addi $a1, $zero, 95    
+addi $a2, $zero, 1         
+addi $a3, $zero, 2 
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Viruses
+
+Pill_Frame_2:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+addi $a0, $zero, 197       
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 198       
+addi $a1, $zero, 75        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 198       
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 199       
+addi $a1, $zero, 70       
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 199       
+addi $a1, $zero, 75       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 200       
+addi $a1, $zero, 71        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 200      
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4  
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 201       
+addi $a1, $zero, 73       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 201     
+addi $a1, $zero, 74       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 202       
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 202     
+addi $a1, $zero, 73       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 203       
+addi $a1, $zero, 71       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 203     
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 204      
+addi $a1, $zero, 70        
+addi $a2, $zero, 1         
+addi $a3, $zero, 10
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 204     
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 205     
+addi $a1, $zero, 73        
+addi $a2, $zero, 1         
+addi $a3, $zero, 9   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 205    
+addi $a1, $zero, 76       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 206     
+addi $a1, $zero, 76        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 206    
+addi $a1, $zero, 78      
+addi $a2, $zero, 1         
+addi $a3, $zero, 1
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 207    
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 2  
+add, $t8, $zero, $zero
+jal draw_rect
+
+R_Pill_Frame_2:
+addi $a0, $zero, 197       
+addi $a1, $zero, 95       
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 198       
+addi $a1, $zero, 93    
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 198       
+addi $a1, $zero, 95        
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 199       
+addi $a1, $zero, 92       
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 199       
+addi $a1, $zero, 94       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 200       
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 200      
+addi $a1, $zero, 98      
+addi $a2, $zero, 1         
+addi $a3, $zero, 4  
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 201       
+addi $a1, $zero, 96    
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 201     
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 202       
+addi $a1, $zero, 97      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 202     
+addi $a1, $zero, 98     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 203       
+addi $a1, $zero, 97      
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 203     
+addi $a1, $zero, 99      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 204      
+addi $a1, $zero, 94      
+addi $a2, $zero, 1         
+addi $a3, $zero, 10
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 204     
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 205     
+addi $a1, $zero, 92      
+addi $a2, $zero, 1         
+addi $a3, $zero, 9   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 205    
+addi $a1, $zero, 94      
+addi $a2, $zero, 1         
+addi $a3, $zero, 4
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 206     
+addi $a1, $zero, 93        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 206    
+addi $a1, $zero, 95     
+addi $a2, $zero, 1         
+addi $a3, $zero, 1
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 207    
+addi $a1, $zero, 94    
+addi $a2, $zero, 1         
+addi $a3, $zero, 2  
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Viruses
+
+Pill_Frame_3:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+addi $a0, $zero, 196       
+addi $a1, $zero, 69        
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+
+R_Pill_Frame_3:
+addi $a0, $zero, 196       
+addi $a1, $zero, 91        
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Viruses
+
+Pill_Frame_4:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+j Draw_Viruses
+
+Pill_Frame_5:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+addi $a0, $zero, 220     
+addi $a1, $zero, 69        
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+
+R_Pill_Frame_5:
+addi $a0, $zero, 220     
+addi $a1, $zero, 91        
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Viruses
+
+Pill_Frame_6:
+addi $t9, $t9, 1 
+sw $t9, animation_frame
+
+addi $a0, $zero, 218      
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 217       
+addi $a1, $zero, 75        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 217        
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 216      
+addi $a1, $zero, 70       
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 216      
+addi $a1, $zero, 75       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 215       
+addi $a1, $zero, 71        
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 215      
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4  
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 214       
+addi $a1, $zero, 73       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 214     
+addi $a1, $zero, 74       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 213       
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 213    
+addi $a1, $zero, 73       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 212       
+addi $a1, $zero, 71       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 212     
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 211      
+addi $a1, $zero, 70        
+addi $a2, $zero, 1         
+addi $a3, $zero, 10
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 211     
+addi $a1, $zero, 72       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 210    
+addi $a1, $zero, 73        
+addi $a2, $zero, 1         
+addi $a3, $zero, 9   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 76       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 209     
+addi $a1, $zero, 76        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 209    
+addi $a1, $zero, 78      
+addi $a2, $zero, 1         
+addi $a3, $zero, 1
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 208   
+addi $a1, $zero, 78        
+addi $a2, $zero, 1         
+addi $a3, $zero, 2  
+add, $t8, $zero, $zero
+jal draw_rect
+
+R_Pill_Frame_6:
+addi $a0, $zero, 218      
+addi $a1, $zero, 95       
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 217       
+addi $a1, $zero, 93     
+addi $a2, $zero, 1         
+addi $a3, $zero, 6 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 217      
+addi $a1, $zero, 95       
+addi $a2, $zero, 1         
+addi $a3, $zero, 1   
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 216        
+addi $a1, $zero, 92      
+addi $a2, $zero, 1         
+addi $a3, $zero, 12   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 216      
+addi $a1, $zero, 94       
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 215       
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 6  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 215     
+addi $a1, $zero, 98       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4  
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 214       
+addi $a1, $zero, 96    
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 214    
+addi $a1, $zero, 97       
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 213        
+addi $a1, $zero, 97      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 213     
+addi $a1, $zero, 98     
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 212       
+addi $a1, $zero, 97      
+addi $a2, $zero, 1         
+addi $a3, $zero, 6   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 212     
+addi $a1, $zero, 99      
+addi $a2, $zero, 1         
+addi $a3, $zero, 3 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 211     
+addi $a1, $zero, 94      
+addi $a2, $zero, 1         
+addi $a3, $zero, 10
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 211     
+addi $a1, $zero, 97      
+addi $a2, $zero, 1         
+addi $a3, $zero, 5 
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 210     
+addi $a1, $zero, 92      
+addi $a2, $zero, 1         
+addi $a3, $zero, 9   
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 210    
+addi $a1, $zero, 94       
+addi $a2, $zero, 1         
+addi $a3, $zero, 4
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 209     
+addi $a1, $zero, 93        
+addi $a2, $zero, 1         
+addi $a3, $zero, 5  
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 209    
+addi $a1, $zero, 95     
+addi $a2, $zero, 1         
+addi $a3, $zero, 1
+add, $t8, $zero, 0x6f3198
+jal draw_rect
+
+addi $a0, $zero, 208    
+addi $a1, $zero, 94    
+addi $a2, $zero, 1         
+addi $a3, $zero, 2  
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Viruses
+
+
 ######################################################################### Viruses ##########################################################################################
+Draw_Viruses:
 # Will just be there heads
 # Red Virus - Main Body (separated by vertical layer from middle to end)
 addi $a0, $zero, 43       
@@ -3181,6 +4186,92 @@ addi $a3, $zero, 2
 add, $t8, $zero, $zero
 jal draw_rect
 
+lb $t9, next_capsule
+lw $t8, anim_frame_r
+
+beq $t9, 0, move_red_1
+beq $t9, 3, move_red_0
+beq $t9, 4, move_red_0
+j move_red_2
+
+move_red_0:
+bge $t8, 4, move_red_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_r
+
+addi $a0, $zero, 44       
+addi $a1, $zero, 166        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 43       
+addi $a1, $zero, 165       
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 43       
+addi $a1, $zero, 167        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 48       
+addi $a1, $zero, 165       
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 47      
+addi $a1, $zero, 166        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 48       
+addi $a1, $zero, 167        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $s4
+jal draw_rect
+j continue_red
+
+move_red_1:
+bge $t8, 4, move_red_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_r
+
+addi $a0, $zero, 42       
+addi $a1, $zero, 165        
+addi $a2, $zero, 3       
+addi $a3, $zero, 3 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 43       
+addi $a1, $zero, 166      
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 47       
+addi $a1, $zero, 165      
+addi $a2, $zero, 3        
+addi $a3, $zero, 3 
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 48       
+addi $a1, $zero, 166      
+addi $a2, $zero, 1        
+addi $a3, $zero, 1 
+add, $t8, $zero, $zero
+jal draw_rect
+j continue_red
+
+move_red_2:
+li $t8, 0
+sw $t8, anim_frame_r
+
 addi $a0, $zero, 44       
 addi $a1, $zero, 165        
 addi $a2, $zero, 1        
@@ -3193,8 +4284,10 @@ addi $a2, $zero, 1
 addi $a3, $zero, 1 
 add, $t8, $zero, $s4
 jal draw_rect
+j continue_red
 
 ############################################### Red Virus - Nose #################################################################
+continue_red:
 addi $a0, $zero, 45       
 addi $a1, $zero, 169        
 addi $a2, $zero, 2        
@@ -3670,6 +4763,92 @@ add, $t8, $zero, $zero
 jal draw_rect
 
 # Pupils
+lb $t9, next_capsule
+lw $t8, anim_frame_b
+
+beq $t9, 1, move_blue_1
+beq $t9, 3, move_blue_0
+beq $t9, 5, move_blue_0
+j move_blue_2
+
+move_blue_0:
+bge $t8, 4, move_blue_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_b
+
+addi $a0, $zero, 59     
+addi $a1, $zero, 194        
+addi $a2, $zero, 2        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 61     
+addi $a1, $zero, 193        
+addi $a2, $zero, 2        
+addi $a3, $zero, 2
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 67   
+addi $a1, $zero, 193        
+addi $a2, $zero, 1        
+addi $a3, $zero, 2
+add, $t8, $zero, $s4
+jal draw_rect
+j start_blue_mouth
+
+move_blue_1:
+bge $t8, 4, move_blue_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_b
+
+addi $a0, $zero, 57     
+addi $a1, $zero, 193        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 58     
+addi $a1, $zero, 194        
+addi $a2, $zero, 2        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 60    
+addi $a1, $zero, 193        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 61     
+addi $a1, $zero, 193        
+addi $a2, $zero, 2        
+addi $a3, $zero, 2
+add, $t8, $zero, $zero
+jal draw_rect
+addi $a0, $zero, 63     
+addi $a1, $zero, 193        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 64     
+addi $a1, $zero, 194        
+addi $a2, $zero, 2        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+addi $a0, $zero, 66     
+addi $a1, $zero, 193        
+addi $a2, $zero, 1        
+addi $a3, $zero, 1
+add, $t8, $zero, $s4
+jal draw_rect
+j start_blue_mouth
+
+move_blue_2:
+li $t8, 0
+sw $t8, anim_frame_b
+
 addi $a0, $zero, 60     
 addi $a1, $zero, 193        
 addi $a2, $zero, 1        
@@ -3688,7 +4867,10 @@ addi $a2, $zero, 1
 addi $a3, $zero, 2
 add, $t8, $zero, $s4
 jal draw_rect
+j start_blue_mouth
+
 ################################# Blue Virus - Mouth #########################################
+start_blue_mouth:
 addi $a0, $zero, 54    
 addi $a1, $zero, 199        
 addi $a2, $zero, 17        
@@ -4110,6 +5292,81 @@ add, $t8, $zero, $zero
 jal draw_rect
 
 # Pupils
+lb $t9, next_capsule
+lw $t8, anim_frame_y
+
+beq $t9, 2, move_yellow_1
+bge $t9, 4, move_yellow_0
+j move_yellow_2
+
+move_yellow_0:
+bge $t8, 4, move_yellow_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_y
+
+addi $a0, $zero, 27       
+addi $a1, $zero, 200       
+addi $a2, $zero, 2       
+addi $a3, $zero, 1 
+add, $t8, $zero, $s5
+jal draw_rect
+addi $a0, $zero, 31       
+addi $a1, $zero, 200        
+addi $a2, $zero, 2       
+addi $a3, $zero, 1 
+add, $t8, $zero, $s5
+jal draw_rect
+j continue_yellow
+
+move_yellow_1:
+bge $t8, 4, move_yellow_2
+addi, $t8, $t8, 1
+sw $t8, anim_frame_y
+
+addi $a0, $zero, 26       
+addi $a1, $zero, 195       
+addi $a2, $zero, 8       
+addi $a3, $zero, 4
+add, $t8, $zero, $zero
+jal draw_rect
+#addi $a0, $zero, 28      
+#addi $a1, $zero, 196       
+#addi $a2, $zero, 4      
+#addi $a3, $zero, 1
+#add, $t8, $zero, $zero
+#jal draw_rect
+
+addi $a0, $zero, 28     
+addi $a1, $zero, 196       
+addi $a2, $zero, 1       
+addi $a3, $zero, 3
+add, $t8, $zero, $s5
+jal draw_rect
+addi $a0, $zero, 28       
+addi $a1, $zero, 200    
+addi $a2, $zero, 1       
+addi $a3, $zero, 1 
+add, $t8, $zero, $s5
+jal draw_rect
+addi $a0, $zero, 31    
+addi $a1, $zero, 196        
+addi $a2, $zero, 1       
+addi $a3, $zero, 3 
+add, $t8, $zero, $s5
+jal draw_rect
+addi $a0, $zero, 31      
+addi $a1, $zero, 200    
+addi $a2, $zero, 1       
+addi $a3, $zero, 1 
+add, $t8, $zero, $s5
+jal draw_rect
+
+j continue_yellow
+
+move_yellow_2:
+li $t8, 0
+sw $t8, anim_frame_y
+
 addi $a0, $zero, 28       
 addi $a1, $zero, 199        
 addi $a2, $zero, 1       
@@ -4122,8 +5379,10 @@ addi $a2, $zero, 1
 addi $a3, $zero, 2 
 add, $t8, $zero, $s5
 jal draw_rect
+j continue_yellow
 
 ################################### Yellow Virus - Antenna #################################################
+continue_yellow:
 addi $a0, $zero, 25       
 addi $a1, $zero, 207        
 addi $a2, $zero, 10       
@@ -4207,6 +5466,449 @@ add, $t8, $zero, $zero
 jal draw_rect
 
 j main_jar_start
+
+#################
+### Game Over ###
+#################
+Game_Over:
+addi $a0, $zero, 80      
+addi $a1, $zero, 64      
+addi $a2, $zero, 96         
+addi $a3, $zero, 72        
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 81  
+addi $a1, $zero, 63       
+addi $a2, $zero, 94        
+addi $a3, $zero, 70        
+add, $t8, $zero, $s4
+jal draw_rect
+
+addi $a0, $zero, 84    
+addi $a1, $zero, 66       
+addi $a2, $zero, 88      
+addi $a3, $zero, 65       
+add, $t8, $zero, 0xc5d6b6
+jal draw_rect
+
+##################################################### Text #######################################################
+# X = 104, Y = 72 
+add, $t8, $zero, $zero
+# Letter R
+addi $a0, $zero, 106
+addi $a1, $zero, 72
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 104
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 107
+addi $a1, $zero, 76
+addi $a2, $zero, 1
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 108
+addi $a1, $zero, 77
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+# Letter E
+addi $a0, $zero, 112
+addi $a1, $zero, 72
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 78
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+# Letter T
+addi $a0, $zero, 120
+addi $a1, $zero, 72
+addi $a2, $zero, 7
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 122
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+# Letter R
+addi $a0, $zero, 130
+addi $a1, $zero, 72
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 130
+addi $a1, $zero, 75
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 72
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 133
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 131
+addi $a1, $zero, 76
+addi $a2, $zero, 1
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 132
+addi $a1, $zero, 77
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+# Letter Y
+addi $a0, $zero, 136
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 137
+addi $a1, $zero, 73
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 138
+addi $a1, $zero, 74
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 138
+addi $a1, $zero, 76
+addi $a2, $zero, 2
+addi $a3, $zero, 3
+jal draw_rect
+addi $a0, $zero, 141
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 140
+addi $a1, $zero, 73
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 139
+addi $a1, $zero, 74
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+# Question Mark
+addi $a0, $zero, 144
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 144
+addi $a1, $zero, 72
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 149
+addi $a1, $zero, 72
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+addi $a0, $zero, 147
+addi $a1, $zero, 75
+addi $a2, $zero, 3
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 146
+addi $a1, $zero, 75
+addi $a2, $zero, 2
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 146
+addi $a1, $zero, 78
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+
+###################################################### Draw Mario #####################################################
+addi $a0, $zero, 120 
+addi $a1, $zero, 92     
+addi $a2, $zero, 6    
+addi $a3, $zero, 12    
+add, $t8, $zero, 0xffffff
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 92     
+addi $a2, $zero, 6    
+addi $a3, $zero, 12    
+add, $t8, $zero, 0xffffff
+jal draw_rect
+
+addi $a0, $zero, 118 
+addi $a1, $zero, 94     
+addi $a2, $zero, 4    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 120 
+addi $a1, $zero, 92     
+addi $a2, $zero, 4    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 122
+addi $a1, $zero, 90     
+addi $a2, $zero, 2    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 132
+addi $a1, $zero, 94     
+addi $a2, $zero, 4    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 130 
+addi $a1, $zero, 92     
+addi $a2, $zero, 4    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 130
+addi $a1, $zero, 90     
+addi $a2, $zero, 2    
+addi $a3, $zero, 2     
+add, $t8, $zero, 0x637355
+jal draw_rect
+
+addi $a0, $zero, 124  
+addi $a1, $zero, 98     
+addi $a2, $zero, 2    
+addi $a3, $zero, 4     
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 128  
+addi $a1, $zero, 98     
+addi $a2, $zero, 2    
+addi $a3, $zero, 4     
+add, $t8, $zero, 0x637355
+jal draw_rect
+
+addi $a0, $zero, 116 
+addi $a1, $zero, 112     
+addi $a2, $zero, 8    
+addi $a3, $zero, 4    
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 118 
+addi $a1, $zero, 110   
+addi $a2, $zero, 4    
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 114
+addi $a1, $zero, 112  
+addi $a2, $zero, 2  
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 118
+addi $a1, $zero, 114  
+addi $a2, $zero, 16 
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 132
+addi $a1, $zero, 110   
+addi $a2, $zero, 4    
+addi $a3, $zero, 2   
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 130
+addi $a1, $zero, 112   
+addi $a2, $zero, 8    
+addi $a3, $zero, 4   
+add, $t8, $zero, 0x637355
+jal draw_rect
+addi $a0, $zero, 138 
+addi $a1, $zero, 112     
+addi $a2, $zero, 2    
+addi $a3, $zero, 2    
+add, $t8, $zero, 0x637355
+jal draw_rect
+
+addi $a0, $zero, 126  
+addi $a1, $zero, 118   
+addi $a2, $zero, 2    
+addi $a3, $zero, 2    
+add, $t8, $zero, 0x637355
+jal draw_rect
+
+check_press:
+lw $t0, keyboard_address
+lw $t8, 0 ($t0) 
+beq $t8, 1, check_r
+j check_press
+
+check_r:
+lw $t0, keyboard_address
+lw $t8, 4 ($t0) 
+beq $t8, 0x72, select_speed # Difficulty is 1
+j check_r
+
+retry:
+# j ...
+
+#################
+### Load Menu ###
+#################
+
+Load_Menu:
+addi $a0, $zero, 80      
+addi $a1, $zero, 32    
+addi $a2, $zero, 96         
+addi $a3, $zero, 32        
+add, $t8, $zero, 0xe6a015
+jal draw_rect
+
+addi $a0, $zero, 81  
+addi $a1, $zero, 33      
+addi $a2, $zero, 94        
+addi $a3, $zero, 30        
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 82    
+addi $a1, $zero, 34      
+addi $a2, $zero, 92      
+addi $a3, $zero, 28      
+add, $t8, $zero, 0xc5d6b6
+jal draw_rect
+
+check_key_1:
+lw $t0, keyboard_address
+lw $t8, 0 ($t0) 
+beq $t8, 1, check_diff
+j check_key_1
+
+check_diff:
+lw $t0, keyboard_address
+lw $t8, 4 ($t0) 
+beq $t8, 0x31, select_speed # Difficulty is 1
+beq $t8, 0x32, select_speed # Difficulty is 2
+beq $t8, 0x33, select_speed # Difficulty is 3
+j check_diff
+
+select_speed:
+addi $a0, $zero, 80      
+addi $a1, $zero, 112  
+addi $a2, $zero, 96         
+addi $a3, $zero, 32        
+add, $t8, $zero, 0xe6a015
+
+jal draw_rect
+
+addi $a0, $zero, 81  
+addi $a1, $zero, 113     
+addi $a2, $zero, 94        
+addi $a3, $zero, 30        
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 82    
+addi $a1, $zero, 114     
+addi $a2, $zero, 92      
+addi $a3, $zero, 28      
+add, $t8, $zero, 0xc5d6b6
+jal draw_rect
+
+check_key_2:
+lw $t0, keyboard_address
+lw $t8, 0 ($t0) 
+beq $t8, 1, check_speed
+j check_key_2
+
+check_speed:
+lw $t0, keyboard_address
+lw $t8, 4 ($t0) 
+beq $t8, 0x31, select_level # Speed is 1
+beq $t8, 0x32, select_level # Speed is 2
+beq $t8, 0x33, select_level # Speed is 3
+j check_speed
+
+select_level:
+addi $a0, $zero, 80      
+addi $a1, $zero, 192   
+addi $a2, $zero, 96         
+addi $a3, $zero, 32        
+add, $t8, $zero, 0xe6a015
+
+jal draw_rect
+
+addi $a0, $zero, 81  
+addi $a1, $zero, 193    
+addi $a2, $zero, 94        
+addi $a3, $zero, 30        
+add, $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $zero, 82    
+addi $a1, $zero, 194  
+addi $a2, $zero, 92      
+addi $a3, $zero, 28      
+add, $t8, $zero, 0xc5d6b6
+jal draw_rect
+
+check_key_3:
+lw $t0, keyboard_address
+lw $t8, 0 ($t0) 
+beq $t8, 1, check_level
+j check_key_3
+
+check_level:
+lw $t0, keyboard_address
+lw $t8, 4 ($t0) 
+beq $t8, 0x31, start_game # Speed is 1
+beq $t8, 0x32, start_game # Speed is 2
+beq $t8, 0x33, start_game # Speed is 3
+j check_level
+
+start_game:
+addi $a0, $zero, 0    
+addi $a1, $zero, 0      
+addi $a2, $zero, 256      
+addi $a3, $zero, 256     
+add, $t8, $zero, $zero
+jal draw_rect
+
+j Draw_Graphics
 
 #######################
 ### Other Functions ###
