@@ -42,8 +42,11 @@ frame_count:        .word       0
 frame_speed:        .word       0
 keyboard_address:   .word       0xffff0000
 
-Score:              .word       0
+Level:              .word       1
+
 Top_Score:          .word       0
+
+Score:              .word       0
 Viruses:            .word       0
 Red_Viruses:        .word       0
 Yellow_Viruses:     .word       0
@@ -52,96 +55,267 @@ Blue_Viruses:       .word       0
 animation_frame:    .word       0   
 anim_frame_r:       .word       0   
 anim_frame_b:       .word       0   
-anim_frame_y:       .word       0   
+anim_frame_y:       .word       0 
 
 State: .byte 0:1        # This byte tracks whether the next check should be for generate a new piece (0),
                         # deleting pieces(1), gravity movement (2), player controled movement (3)
                         # Game Over (4)
-                        
+
+difficulty:         .byte       1
 capsule_type:       .byte       0
 capsule_rotation:   .byte       0
 next_capsule:       .byte       0   # Number refereing to which piece will be made next. Order
                                     # Can be found in the handout
 .text
 main:
-addi $t0 $zero 1 # Temporary testing
-la $t1 Board
-addi $t0, $zero, 5
-la $t0, displayaddress
-sll $t2, $t0, 1     # Update the offset to be correct
 
-la $t0, old_display_address
-#jal Generate_Piece
 
 # Initialize
+Main_Menu_Return_Point:
+
+jal Load_Menu
+jal Double_Buffer
+
+Check_Menu_decsion:
+lw $t0 , keyboard_address # $t 0 = base address for keyboard
+lw $t8 , 0 ( $t0 ) # Load first word from keyboard
+beq $t8 , 1 , Process_Menu_Decision # If first word 1 , key is pressed
+j Check_Menu_decsion
+
+Process_Menu_Decision : # A key is pressed
+lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
+beq $t2 , 0x71 , Unpause # Check if the key q
+
+
+jal select_speed
+jal Double_Buffer
+
+Check_Speed_Selection:
+lw $t0 , keyboard_address       # $t 0 = base address for keyboard
+lw $t8 , 0 ( $t0 )              # Load first word from keyboard
+beq $t8 , 1 , Process_Speed_Selection   # If first word 1 , key is pressed
+j Check_Speed_Selection
+
+Process_Speed_Selection : # A key is pressed
+lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
+beq $t2 , 0x71 , Unpause # Check if the key q
+
+
+
+jal select_level
+jal Double_Buffer
+
+Check_level_Selection:
+lw $t0 , keyboard_address       # $t 0 = base address for keyboard
+lw $t8 , 0 ( $t0 )              # Load first word from keyboard
+beq $t8 , 1 , Process_Level_selection   # If first word 1 , key is pressed
+j Check_level_Selection
+
+Process_Level_selection : # A key is pressed
+lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
+beq $t2 , 0x71 , Unpause # Check if the key q
+
+
+
+lb $zero, State
+
+li $t0, 1
+sb $t0, difficulty
+
 addi $t0, $zero, 10
 sw $t0, frame_count
 sw $t0, frame_speed
+
+
+
 jal Start_Of_Game_Piece
+jal Generate_Viruses
 
 Start_Main_Loop:
 
 # ========= Plans For The Main Loop =======
-li $v0 , 32
+li $v0 , 32     # Start of Loop / Delay?
 li $a0 , 16
 syscall
 
 
-# Start of Loop / Delay?
-# Get Player Input
-
 jal Movement_Determiner  # Update Piece Positions
-# Check if the game is over and exit
+
 jal Draw_Graphics # Draw the new board
 jal Double_Buffer
-# Play secion of Music?
-# Restart Loop
-# Start a new game?
+
+
+
 jal Frame_Advance       # Increment frame number
 
+
+
+
+lw $t0, Viruses
+beq $t0, $zero, Post_Game   # If all viruses are dead, end the game
 lb $t0, State
 li $t1, 3
 ble $t0, $t1, Start_Main_Loop
 
-
+Post_Game:
+#jal Game_Over
+jal Double_Buffer
 Exit:
 li $v0 , 10             # Exit
 syscall
 
-Frame_Advance:
+
+
+
+
+Respond_to_q:
+# Draw Pause screen 
+j Check_unPause_game
+
+Check_unPause_game:
+lw $t0 , keyboard_address # $t 0 = base address for keyboard
+lw $t8 , 0 ( $t0 ) # Load first word from keyboard
+beq $t8 , 1 , unPause_Game # If first word 1 , key is pressed
+j Respond_to_q
+
+unPause_Game : # A key is pressed
+lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
+beq $t2 , 0x71 , Unpause # Check if the key q
+j Respond_to_q
+Unpause:
+jr $ra
+
+
+Frame_Advance:  # Decrement the frame count
 lw $t0, frame_count
 
 beq $t0, $zero, Reset_Frame_Count
 subi $t0, $t0, 1
 j Frame_Advance_Return
 
-Reset_Frame_Count:
+Reset_Frame_Count:  # Set the frame count based on the difficulty and number of viruses
 lw $t1, frame_speed
+lw $t2, Viruses
+srl $t2, $t2, 1  # divide by 2
+add $t1, $t1, $t2       # add viruses/2 to the deplay
 add $t0, $t1, $zero
 Frame_Advance_Return:
 
 sw, $t0, frame_count
 jr $ra  
 
-Check_Cleared_Rows_and_Columns:
+Generate_Viruses:
 
 addi $sp, $sp, -4                    # Store Return Address on the stack
 sw $ra, 0($sp)
+
+lw $t0, Level
+li $t1, 4
+mul $t0, $t1, $t0       # Num virus left to make
+
+Generate_Virus_Loop:
+li $v0 , 42
+li $a0 , 0
+li $a1 , 96
+syscall         # $a0 is the position
+
+la $t1, Board
+
+sll $t2, $a0, 1 # Multiply by 2 to get position to place piece
+add $t2, $t1, $t2   # $t2 is not set properly
+addi $t2, $t2, 64   # Ensures top 2 rows cant have viruses
+li $v0 , 42     # Generate a virus
+li $a0 , 0
+li $a1 , 3
+syscall         # $a0 is the virus
+addi $t3, $a0, 1
+
+sh $t3, 0($t2)
+
+subi $t0, $t0, 1
+bne $t0, $zero, Generate_Virus_Loop
+
 
 sw $zero, Viruses       # Set Viruses to 0
 sw $zero, Red_Viruses
 sw $zero, Yellow_Viruses
 sw $zero, Blue_Viruses
 la $a0, Count_Viruses
-jal Access_All      # Count Viruses
+jal Access_All          # Count Viruses
 
-j Check_Rows        # Check and clear rows
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
+
+
+
+
+
+
+
+Check_Cleared_Rows_and_Columns:
+
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
+
+# Set state to generate piece, if a piece is deleted this will be overwritten to gravity
+sb $zero, State
+la $t0, State
+
+sw $zero, Viruses       # Set Viruses to 0
+sw $zero, Red_Viruses
+sw $zero, Yellow_Viruses
+sw $zero, Blue_Viruses
+la $a0, Count_Viruses
+jal Access_All          # Count Viruses
+
+j Check_Rows            # Check and clear rows
 Post_Check_Rows:
-#j Check_Columns     # Check and clear columns
-# Normalize broken pills
-# Count viruses
-# Add Points
+j Check_Columns         # Check and clear columns
+Post_Check_Columns:
+la $a0, Normalize_Pieces
+jal Access_All          # Normalize broken pills
+
+lw $t0, Viruses
+
+addi $sp, $sp, -4       # Store old virus counts      
+sw $t0, 0($sp)
+
+
+sw $zero, Viruses       # Set Viruses to 0
+sw $zero, Red_Viruses
+sw $zero, Yellow_Viruses
+sw $zero, Blue_Viruses
+la $a0, Count_Viruses
+jal Access_All          # Count Viruses
+
+
+
+lw $t0, 0($sp)     
+addi $sp, $sp, 4
+
+lw $t4, Viruses     # Load new virus counts
+
+
+
+# Add Points. Additional score is equal to difficulty x Number of viruses deleted
+lb $t1, difficulty
+sub $t0, $t0, $t4   # Change in viruses = final - initial
+mul $t0, $t1, $t0
+lw $t2, Score
+add $t0, $t0, $t2
+sw $t0, Score
+
 j Check_Cleared_Return
+
+
+
+
+
+
+
+
+
 
 Check_Rows:
 li $t0, 0   # Y Position variable
@@ -162,6 +336,7 @@ sll $t3, $t0, 4
 add $t2, $t2, $t3
 sll $t3, $t1, 1
 add $t2, $t2, $t3   # Reference to the current piece
+add $a3, $t2, $zero     # Store Reference to position for clearing
 add $a1, $t2, $zero
 jal Get_Colour_Of_Piece   # Get piece and check if colour matches
 
@@ -223,6 +398,8 @@ j Post_Check_Rows
 
 Clear_Row:  # a1, a2 are start and end point
 # Loop over the points from start point to end point
+li $t9, 2
+sb $t9, State   # Set state to gravity
 Clear_Row_Start_loop:
 sh $zero, 0($a1)    # Set values to 0
 beq $a1, $a2, Clear_Row_Return
@@ -238,16 +415,108 @@ Check_Columns:
 # If colour doesnt match, check if length is at least 4. If it is clear up until the current pos. then
 # reset colour to new colour and start point to new start point
 # After reaching the end of a column, check to see if it is at least 4, if so, clear is
+li $t0, 0   # X Position variable
+
+Check_Columns_Start_X_Loop:
+li $t1, 1   # Y position variable
+# Store start point, colour, length of current sequence
+la $t2, Board
+sll $t3, $t0, 4
+add $s0, $t2, $t3       # $s0 is the start of the current sequence
+jal Get_Colour_Of_Piece
+add $s1, $v0, $zero     # $s1 is the colour of the piece
+li $s2, 1               # $s2 is the length of the current sequence
+Check_Column_start_Y_loop:
+
+la $t2, Board
+sll $t3, $t0, 1
+add $t2, $t2, $t3
+sll $t3, $t1, 4
+add $t2, $t2, $t3   # Reference to the current piece
+add $a3, $t2, $zero     # Store Reference to position for clearing
+add $a1, $t2, $zero
+jal Get_Colour_Of_Piece   # Get piece and check if colour matches
+
+beq $v0, $s1, Column_Continues# If colour matches, increment length 
+j Column_Broken
+Column_Continues:  # If the colour matches, increment the length
+addi $s2, $s2, 1
+j Check_Column_End_Y_Loop
+Column_Broken:
+li $t3 4    # If colour doesnt match, check if length is at least 4. If 
+            # it is clear up until the current pos. then
+            # reset colour to new colour and start point to new start point'
+bge $s2, $t3, Prep_Clear_Column
+jal Reset_Colour_and_Length
+j Check_Column_End_Y_Loop
+
+
+Prep_Clear_Column:
+beq $s1, $zero, Prep_Clear_Column_0
+add $a1, $s0, $zero
+subi $a2, $t2, 16
+jal Clear_column
+jal Reset_Colour_and_Length
+j Check_Column_End_Y_Loop
+
+Prep_Clear_Column_0:
+jal Reset_Colour_and_Length
+j Check_Column_End_Y_Loop
+
+Check_Column_End_Y_Loop:
+addi $t1, $t1, 1
+li $t3, 15
+ble $t1, $t3, Check_Column_start_Y_loop
+# After reaching the end of a column, check to see if it is at least 4, if so, clear is
+li $t3 4    # If colour doesnt match, check if length is at least 4. If 
+            # it is clear up until the current pos. then
+            # reset colour to new colour and start point to new start point'
+bge $s2, $t3, Prep_Clear_Column_Post_loop
+jal Reset_Colour_and_Length
+j Check_Column_End_X_Loop
+
+Prep_Clear_Column_Post_loop:
+beq $s1, $zero Prep_Clear_Column_Post_loop_0
+add $a1, $s0, $zero
+add $a2, $t2, $zero
+jal Clear_column
+jal Reset_Colour_and_Length
+j Check_Column_End_X_Loop
+
+Prep_Clear_Column_Post_loop_0:
+jal Reset_Colour_and_Length
+j Check_Column_End_X_Loop
+
+Check_Column_End_X_Loop:
+addi $t0, $t0, 1
+li $t2, 7
+ble $t0, $t2, Check_Columns_Start_X_Loop
+j Post_Check_Columns
+
+
 Clear_column:
 # Loop over the points from start point to end point
 # Set values to 0
+# a1, a2 are start and end point
+# Loop over the points from start point to end point
+li $t9, 2
+sb $t9, State   # Set state to gravity
+Clear_Column_Start_loop:
+sh $zero, 0($a1)    # Set values to 0
+beq $a1, $a2, Clear_Column_Return
+addi $a1, $a1, 16
+j Clear_Column_Start_loop
+Clear_Column_Return:
+jr $ra
 
 Check_Cleared_Return:
 lw $ra, 0($sp)      # Read return address from the stack
 addi $sp, $sp, 4
 jr $ra              # Exit function
 
-Reset_Colour_and_Length:
+
+Reset_Colour_and_Length:    # Arguement $a3 should be the current position
+add $s0, $a3, $zero
 add $s1, $v0, $zero
 li $s2, 1
 jr $ra
@@ -284,6 +553,68 @@ j Colour_Return
 Colour_Return:
 jr $ra  
 
+Normalize_Pieces: # $a1 is the position, If the piece is a connected piece, check if the other half exists
+                    # If not, turn it into an unconnected piece
+lh $t0, 0($a1)  # $t0 is the piece to be checked
+li $t1, 5
+beq $t0, $t1, Normalize_Up
+li $t1, 10
+beq $t0, $t1, Normalize_Up
+li $t1, 15
+beq $t0, $t1, Normalize_Up
+li $t1, 6
+beq $t0, $t1, Normalize_Left
+li $t1, 11
+beq $t0, $t1, Normalize_Left
+li $t1, 16
+beq $t0, $t1, Normalize_Left
+li $t1, 7
+beq $t0, $t1, Normalzie_Down
+li $t1, 12
+beq $t0, $t1, Normalzie_Down
+li $t1, 17
+beq $t0, $t1, Normalzie_Down
+li $t1, 8
+beq $t0, $t1, Normalzie_Right
+li $t1, 13
+beq $t0, $t1, Normalzie_Right
+li $t1, 18
+beq $t0, $t1, Normalzie_Right
+j Normalize_Return
+Normalize_Up:   # Check Piece above and if it is 0, set the current piece -1
+subi $t1, $a1, 16   # Refernce to piece above
+lh $t2, 0($t1)
+bne $t2, $zero, Normalize_Return 
+subi $t0, $t0, 1    # Subtract 1 from the value of $t0
+sh $t0, 0($a1)
+j Normalize_Return
+Normalize_Left: # Check Piece left and if it is 0, set the current piece -2
+subi $t1, $a1, 2   # Refernce to piece left
+lh $t2, 0($t1)
+bne $t2, $zero, Normalize_Return 
+subi $t0, $t0, 2    # Subtract 2 from the value of $t0
+sh $t0, 0($a1)
+j Normalize_Return
+Normalzie_Down:     # Check Piece below and if it is 0, set the current piece -4
+addi $t1, $a1, 16   # Refernce to piece below
+lh $t2, 0($t1)
+bne $t2, $zero, Normalize_Return 
+subi $t0, $t0, 3    # Subtract 3 from the value of $t0
+sh $t0, 0($a1)
+j Normalize_Return
+Normalzie_Right: # Check Piece right and if it is 0, set the current piece -3
+addi $t1, $a1, 2   # Refernce to piece Right
+lh $t2, 0($t1)
+bne $t2, $zero, Normalize_Return 
+subi $t0, $t0, 4    # Subtract 4 from the value of $t0
+sh $t0, 0($a1)
+j Normalize_Return
+
+
+
+Normalize_Return:
+jr $ra
+
 Count_Viruses:  # $a1 is a position, determine if it is a virus, if it is, increment the 
                 # corresponding virus counts
 lh $t0, 0($a1)
@@ -296,23 +627,23 @@ beq $t0, $t1, Count_Blue_Virus
 j Count_Return
 
 Count_Red_Virus:
-lw, $t1, Red_Viruses
-add $t0, $t0, $t1
+lw, $t0, Red_Viruses
+addi $t0, $t0, 1
 sw $t0, Red_Viruses
-j Count_Viruses
+j Count_Virus
 Count_Yellow_Virus:
-lw, $t1, Yellow_Viruses
-add $t0, $t0, $t1
+lw, $t0, Yellow_Viruses
+addi $t0, $t0, 1
 sw $t0, Yellow_Viruses
-j Count_Viruses
+j Count_Virus
 Count_Blue_Virus:
-lw, $t1, Blue_Viruses
-add $t0, $t0, $t1
+lw, $t0, Blue_Viruses
+addi $t0, $t0, 1
 sw $t0, Blue_Viruses
-j Count_Viruses
+j Count_Virus
 Count_Virus:
-lw, $t1, Viruses
-add $t0, $t0, $t1
+lw, $t0, Viruses
+addi $t0, $t0, 1
 sw $t0, Viruses
 
 Count_Return:
@@ -354,12 +685,12 @@ jal Generate_Piece
 j Movement_Determiner_Return
 Movement_Clear_Rows:
 jal Check_Cleared_Rows_and_Columns
-li $t0, 2
-sb $t0, State
+
 j Movement_Determiner_Return
 Movement_Gravity:           # State changing for Gravity is done beforehand, so if no pice is moved the
                             # State changes
-sb $zero, State
+li $t9, 1
+sb $t9, State
 
 la $a0, Gravity
                         
@@ -402,6 +733,7 @@ beq $t2 , 0x61 , respond_to_A # Check if the key a was pressed
 beq $t2 , 0x64 , respond_to_D # Check if the key d was pressed
 beq $t2 , 0x73 , respond_to_S # Check if the key s was pressed
 beq $t2 , 0x77 , respond_to_W # Check if the key w was pressed
+beq $t2 , 0x71 , Respond_to_q # Check if the key q was pressed
 
 j Player_Movement_Return
 
@@ -1064,6 +1396,12 @@ bne $t5, $t0, Start_Double_Buffer_Loop
 
 
 jr $ra
+
+
+
+
+
+
 # ...
 ########################################
 ### First, I'll draw the square grid ###
@@ -1076,10 +1414,17 @@ sw $ra, 0($sp)
 #$s1 - $s7 will store the colours
 li $s1, 0x321e96 # indigo, RGB 50, 30, 150
 li $s2, 0xc5d6b6 # white, RGB 197, 214, 182
-li $s3, 0xde126a # magenta, RGB 222, 18, 106
+li $s3, 0xde126a #magenta, RGB 222, 18, 106
 li $s4, 0xe6a015 # yellow, RGB 230, 160, 21
 li $s5, 0x14bab7 # cyan, 20, 186, 183
 li $s6, 0xe3b19a # beige, RGB 227, 177, 154
+
+addi $a0, $zero, 0    
+addi $a1, $zero, 0      
+addi $a2, $zero, 256      
+addi $a3, $zero, 256     
+add, $t8, $zero, $zero
+jal draw_rect
 
 # Set up the parameters for the rectangle drawing function
 add $a0, $zero, $zero          # Set the X coordinate for the top left corner of the rectangle (in pixels)
@@ -3243,7 +3588,473 @@ addi $a1, $zero, 197
 addi $a2, $zero, 1
 addi $a3, $zero, 2
 jal draw_rect
+################################################ Variable Text #####################################################
+# X = 224, Y = 152
+lw $t9, Level
+beq $t9, 1, level_1
+beq $t9, 2, level_2
+beq $t9, 3, level_3
 
+level_1:
+addi $a0, $zero, 226
+addi $a1, $zero, 152
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 227
+addi $a1, $zero, 152
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+j show_speed
+
+level_2:
+addi $a0, $zero, 226
+addi $a1, $zero, 152
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+addi $a1, $zero, 155
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+addi $a1, $zero, 158
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+addi $a1, $zero, 155
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 229
+addi $a1, $zero, 152
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+j show_speed
+
+level_3:
+addi $a0, $zero, 106 
+addi $a1, $zero, 152
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 155
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 158
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 152
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+j show_speed
+
+show_speed:
+lw $t9, frame_count
+beq $t9, 1, speed_1
+beq $t9, 2, speed_2
+beq $t9, 3, speed_3
+# X = 224, Y = 176
+speed_1:
+addi $a0, $zero, 226
+addi $a1, $zero, 176
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 227
+addi $a1, $zero, 176
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+j end_show_speed
+
+speed_2:
+addi $a0, $zero, 226
+addi $a1, $zero, 176
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+addi $a1, $zero, 179
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+addi $a1, $zero, 182
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+addi $a1, $zero, 179
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 229
+addi $a1, $zero, 176
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+j end_show_speed
+
+speed_3:
+addi $a0, $zero, 106 
+addi $a1, $zero, 179
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 155
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 182
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 176
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+j end_show_speed
+
+end_show_speed:
+lw $t5, Viruses
+li $t9, 0
+
+show_virus_count:
+# X = 224, Y = 200
+li $t0, 10
+bge $t9, 16, end_virus_count
+beq $t5, 0, show_v_0
+div $t5, $t0   # Divide $t0 by 10
+mfhi $t6       # the last digit (remainder)
+mflo $t5       # the quotient
+beq $t6, 0, show_v_0
+beq $t6, 1, show_v_1
+beq $t6, 2, show_v_2
+beq $t6, 3, show_v_3
+beq $t6, 4, show_v_4
+beq $t6, 5, show_v_5
+beq $t6, 6, show_v_6
+beq $t6, 7, show_v_7
+beq $t6, 8, show_v_8
+beq $t6, 9, show_v_9
+
+show_v_0:
+addi $a0, $zero, 228 
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 228
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 230
+sub $a0, $a0, $t9
+addi $a1, $zero, 202
+addi $a2, $zero, 1
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 228
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 227
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 231
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_1:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 227
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_2:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_3:
+addi $a0, $zero, 224
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 224
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 224
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 227
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_4:
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_5:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 3
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_6:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_7:
+addi $a0, $zero, 224
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 228
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_8:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+show_v_9:
+addi $a0, $zero, 226
+addi $a1, $zero, 200
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 203
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 226
+sub $a0, $a0, $t9
+addi $a1, $zero, 206
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 225
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 229
+sub $a0, $a0, $t9
+addi $a1, $zero, 200
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+
+add $t9, $t9, 8
+j show_virus_count
+
+end_virus_count:
 #######################################
 ### Fourth, I'll add the petri dish ###
 #######################################
@@ -4623,6 +5434,8 @@ j Draw_Viruses
 
 ######################################################################### Viruses ##########################################################################################
 Draw_Viruses:
+lw $t0, Red_Viruses
+beq $t0, $zero, start_blue_virus
 # Will just be there heads
 # Red Virus - Main Body (separated by vertical layer from middle to end)
 addi $a0, $zero, 43       
@@ -5078,6 +5891,10 @@ add, $t8, $zero, $s3
 jal draw_rect
 
 ################################# Blue Virus - Main Body #########################################
+start_blue_virus:
+lw $t0, Blue_Viruses
+beq $t0, $zero, start_yellow_virus
+
 addi $a0, $zero, 60       
 addi $a1, $zero, 185        
 addi $a2, $zero, 4        
@@ -5547,6 +6364,10 @@ add, $t8, $zero, $s4
 jal draw_rect
 
 ################################### Yellow Virus - Main Body #################################################
+start_yellow_virus:
+lw $t0, Yellow_Viruses
+beq $t0, $zero, end_virus_draw
+
 addi $a0, $zero, 27       
 addi $a1, $zero, 193        
 addi $a2, $zero, 6        
@@ -5895,7 +6716,7 @@ addi $a3, $zero, 2
 add, $t8, $zero, $zero
 jal draw_rect
 
-################################### Yellow Virus - Antenna #################################################
+################################### Yellow Virus - Eyes #################################################
 addi $a0, $zero, 26       
 addi $a1, $zero, 199        
 addi $a2, $zero, 8       
@@ -6121,6 +6942,7 @@ addi $a3, $zero, 1
 add, $t8, $zero, $zero
 jal draw_rect
 
+end_virus_draw:
 j main_jar_start
 
 #################
@@ -6129,7 +6951,7 @@ j main_jar_start
 Game_Over:
 addi $a0, $zero, 80      
 addi $a1, $zero, 64      
-addi $a2, $zero, 96         
+addi $a2, $zero, 96     
 addi $a3, $zero, 72        
 add, $t8, $zero, $zero
 jal draw_rect
@@ -6447,46 +7269,307 @@ retry:
 #################
 
 Load_Menu:
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
 addi $a0, $zero, 80      
 addi $a1, $zero, 32    
 addi $a2, $zero, 96         
-addi $a3, $zero, 32        
+addi $a3, $zero, 40        
 add, $t8, $zero, 0xe6a015
 jal draw_rect
 
 addi $a0, $zero, 81  
 addi $a1, $zero, 33      
 addi $a2, $zero, 94        
-addi $a3, $zero, 30        
+addi $a3, $zero, 38       
 add, $t8, $zero, $zero
 jal draw_rect
 
 addi $a0, $zero, 82    
 addi $a1, $zero, 34      
 addi $a2, $zero, 92      
-addi $a3, $zero, 28      
+addi $a3, $zero, 36     
 add, $t8, $zero, 0xc5d6b6
 jal draw_rect
 
-check_key_1:
-lw $t0, keyboard_address
-lw $t8, 0 ($t0) 
-beq $t8, 1, check_diff
-j check_key_1
+######################################################## Text - Difficulty ##################################################
+add, $t8, $zero, $zero
+# X = 88, Y = 48
+# Letter D
+addi $a0, $zero, 89
+addi $a1, $zero, 48
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 54
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 93
+addi $a1, $zero, 49
+addi $a2, $zero, 2
+addi $a3, $zero, 5
+jal draw_rect
 
-check_diff:
-lw $t0, keyboard_address
-lw $t8, 4 ($t0) 
-beq $t8, 0x31, select_speed # Difficulty is 1
-beq $t8, 0x32, select_speed # Difficulty is 2
-beq $t8, 0x33, select_speed # Difficulty is 3
-j check_diff
+# Letter I
+addi $a0, $zero, 99
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+
+# Letter F
+addi $a0, $zero, 106
+addi $a1, $zero, 48
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 51
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter F
+addi $a0, $zero, 114
+addi $a1, $zero, 48
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 114
+addi $a1, $zero, 51
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 114
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter I
+
+addi $a0, $zero, 122
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter C
+addi $a0, $zero, 132
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 48
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 51
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 132
+addi $a1, $zero, 53
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 128
+addi $a1, $zero, 54
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+
+# Letter U
+addi $a0, $zero, 136
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 141
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 136
+addi $a1, $zero, 54
+addi $a2, $zero, 5
+addi $a3, $zero, 1
+jal draw_rect
+
+# Letter L
+addi $a0, $zero, 144 
+addi $a1, $zero, 48 
+addi $a2, $zero, 2  
+addi $a3, $zero, 7    
+jal draw_rect
+addi $a0, $zero, 144 
+addi $a1, $zero, 54 
+addi $a2, $zero, 6  
+addi $a3, $zero, 1   
+jal draw_rect
+
+# Letter T
+addi $a0, $zero, 152
+addi $a1, $zero, 48
+addi $a2, $zero, 7
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 155
+addi $a1, $zero, 48
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter Y
+addi $a0, $zero, 160
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 161
+addi $a1, $zero, 49
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 162
+addi $a1, $zero, 50
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 162
+addi $a1, $zero, 52
+addi $a2, $zero, 2
+addi $a3, $zero, 3
+jal draw_rect
+addi $a0, $zero, 165
+addi $a1, $zero, 48
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 164
+addi $a1, $zero, 49
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 163
+addi $a1, $zero, 50
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+
+# X = 88, Y = 56
+# 1
+addi $a0, $zero, 90
+sub $a0, $a0, $t9
+addi $a1, $zero, 56
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 91
+sub $a0, $a0, $t9
+addi $a1, $zero, 56
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# 2
+addi $a0, $zero, 98
+addi $a1, $zero, 56
+sub $a0, $a0, $t9
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 59
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 62
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 97
+addi $a1, $zero, 59
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 101
+addi $a1, $zero, 56
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+# 3
+addi $a0, $zero, 106 
+addi $a1, $zero, 56
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 59
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 62
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 56
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+
+#############################################################################################################################
+
+
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
+
+#check_key_1:
+#lw $t0, keyboard_address
+#lw $t8, 0 ($t0) 
+#beq $t8, 1, check_diff
+#j check_key_1
+
+#check_diff:
+#lw $t0, keyboard_address
+#lw $t8, 4 ($t0) 
+#beq $t8, 0x31, select_speed # Difficulty is 1
+#beq $t8, 0x32, select_speed # Difficulty is 2
+#beq $t8, 0x33, select_speed # Difficulty is 3
+#j check_diff
 
 select_speed:
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
 addi $a0, $zero, 80      
 addi $a1, $zero, 112  
 addi $a2, $zero, 96         
-addi $a3, $zero, 32        
+addi $a3, $zero, 40        
 add, $t8, $zero, 0xe6a015
 
 jal draw_rect
@@ -6494,36 +7577,232 @@ jal draw_rect
 addi $a0, $zero, 81  
 addi $a1, $zero, 113     
 addi $a2, $zero, 94        
-addi $a3, $zero, 30        
+addi $a3, $zero, 38      
 add, $t8, $zero, $zero
 jal draw_rect
 
 addi $a0, $zero, 82    
 addi $a1, $zero, 114     
 addi $a2, $zero, 92      
-addi $a3, $zero, 28      
+addi $a3, $zero, 36     
 add, $t8, $zero, 0xc5d6b6
 jal draw_rect
 
-check_key_2:
-lw $t0, keyboard_address
-lw $t8, 0 ($t0) 
-beq $t8, 1, check_speed
-j check_key_2
+######################################################## Text - Speed ##################################################
+add, $t8, $zero, $zero
+# X = 88, Y = 128
+# Letter S
+addi $a0, $zero, 92
+addi $a1, $zero, 128
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 128
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 128
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 131
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 92
+addi $a1, $zero, 131
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 134
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 89
+addi $a1, $zero, 133
+addi $a2, $zero, 1
+addi $a3, $zero, 2
+jal draw_rect
 
-check_speed:
-lw $t0, keyboard_address
-lw $t8, 4 ($t0) 
-beq $t8, 0x31, select_level # Speed is 1
-beq $t8, 0x32, select_level # Speed is 2
-beq $t8, 0x33, select_level # Speed is 3
-j check_speed
+# Letter P
+addi $a0, $zero, 98
+addi $a1, $zero, 128
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 131
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 96
+addi $a1, $zero, 128
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 101
+addi $a1, $zero, 128
+addi $a2, $zero, 1
+addi $a3, $zero, 4
+jal draw_rect
+
+# Letter E
+addi $a0, $zero, 104
+addi $a1, $zero, 128
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 104
+addi $a1, $zero, 134
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 104
+addi $a1, $zero, 131
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 104
+addi $a1, $zero, 128
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter E
+addi $a0, $zero, 112
+addi $a1, $zero, 128
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 134
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 131
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 112
+addi $a1, $zero, 128
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter D
+addi $a0, $zero, 121
+addi $a1, $zero, 128
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 121
+addi $a1, $zero, 134
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 121
+addi $a1, $zero, 128
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+addi $a0, $zero, 125
+addi $a1, $zero, 129
+addi $a2, $zero, 2
+addi $a3, $zero, 5
+jal draw_rect
+
+# X = 88, Y = 112
+# 1
+addi $a0, $zero, 90
+addi $a1, $zero, 136
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 91
+addi $a1, $zero, 136
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# 2
+addi $a0, $zero, 98
+addi $a1, $zero, 136
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 139
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 142
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 97
+addi $a1, $zero, 139
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 101
+addi $a1, $zero, 136
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+# 3
+addi $a0, $zero, 106 
+addi $a1, $zero, 136
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 139
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 142
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 136
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+#########################################################################################################################
+
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
+#check_key_2:
+#lw $t0, keyboard_address
+#lw $t8, 0 ($t0) 
+#beq $t8, 1, check_speed
+#j check_key_2
+
+#check_speed:
+#lw $t0, keyboard_address
+#lw $t8, 4 ($t0) 
+#beq $t8, 0x31, select_level # Speed is 1
+#beq $t8, 0x32, select_level # Speed is 2
+#beq $t8, 0x33, select_level # Speed is 3
+#j check_speed
 
 select_level:
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
 addi $a0, $zero, 80      
 addi $a1, $zero, 192   
 addi $a2, $zero, 96         
-addi $a3, $zero, 32        
+addi $a3, $zero, 40       
 add, $t8, $zero, 0xe6a015
 
 jal draw_rect
@@ -6531,40 +7810,205 @@ jal draw_rect
 addi $a0, $zero, 81  
 addi $a1, $zero, 193    
 addi $a2, $zero, 94        
-addi $a3, $zero, 30        
+addi $a3, $zero, 38        
 add, $t8, $zero, $zero
 jal draw_rect
 
 addi $a0, $zero, 82    
 addi $a1, $zero, 194  
 addi $a2, $zero, 92      
-addi $a3, $zero, 28      
+addi $a3, $zero, 36      
 add, $t8, $zero, 0xc5d6b6
 jal draw_rect
 
-check_key_3:
-lw $t0, keyboard_address
-lw $t8, 0 ($t0) 
-beq $t8, 1, check_level
-j check_key_3
-
-check_level:
-lw $t0, keyboard_address
-lw $t8, 4 ($t0) 
-beq $t8, 0x31, start_game # Speed is 1
-beq $t8, 0x32, start_game # Speed is 2
-beq $t8, 0x33, start_game # Speed is 3
-j check_level
-
-start_game:
-addi $a0, $zero, 0    
-addi $a1, $zero, 0      
-addi $a2, $zero, 256      
-addi $a3, $zero, 256     
+######################################################## Text - Level ##################################################
+# X = 88, Y = 208
 add, $t8, $zero, $zero
+# Letter L
+addi $a0, $zero, 88  
+addi $a1, $zero, 208  
+addi $a2, $zero, 2  
+addi $a3, $zero, 7    
+jal draw_rect
+addi $a0, $zero, 88   
+addi $a1, $zero, 214   
+addi $a2, $zero, 6  
+addi $a3, $zero, 1   
 jal draw_rect
 
-j Draw_Graphics
+# Letter E
+addi $a0, $zero, 96
+addi $a1, $zero, 208 
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 96
+addi $a1, $zero, 214
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 96
+addi $a1, $zero, 211
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 96
+addi $a1, $zero, 208
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter V
+addi $a0, $zero, 104
+addi $a1, $zero, 208     
+addi $a2, $zero, 2  
+addi $a3, $zero, 3    
+jal draw_rect
+addi $a0, $zero, 104 
+addi $a1, $zero, 211     
+addi $a2, $zero, 2  
+addi $a3, $zero, 2    
+jal draw_rect
+addi $a0, $zero, 105 
+addi $a1, $zero, 213     
+addi $a2, $zero, 2  
+addi $a3, $zero, 1    
+jal draw_rect
+addi $a0, $zero, 107 
+addi $a1, $zero, 214     
+addi $a2, $zero, 1  
+addi $a3, $zero, 1    
+jal draw_rect
+addi $a0, $zero, 108 
+addi $a1, $zero, 213      
+addi $a2, $zero, 2  
+addi $a3, $zero, 1    
+jal draw_rect
+addi $a0, $zero, 109 
+addi $a1, $zero, 211     
+addi $a2, $zero, 2  
+addi $a3, $zero, 2    
+jal draw_rect
+addi $a0, $zero, 109 
+addi $a1, $zero, 208     
+addi $a2, $zero, 2  
+addi $a3, $zero, 3    
+jal draw_rect
+
+# Letter E
+addi $a0, $zero, 113
+addi $a1, $zero, 208 
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 113
+addi $a1, $zero, 214
+addi $a2, $zero, 6
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 113
+addi $a1, $zero, 211
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 113
+addi $a1, $zero, 208
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# Letter L
+addi $a0, $zero, 121 
+addi $a1, $zero, 208     
+addi $a2, $zero, 2  
+addi $a3, $zero, 7    
+jal draw_rect
+addi $a0, $zero, 121    
+addi $a1, $zero, 214     
+addi $a2, $zero, 6  
+addi $a3, $zero, 1   
+jal draw_rect
+
+# X = 88, Y = 116
+# 1
+addi $a0, $zero, 90
+addi $a1, $zero, 216
+addi $a2, $zero, 2
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 91
+addi $a1, $zero, 216
+addi $a2, $zero, 2
+addi $a3, $zero, 7
+jal draw_rect
+
+# 2
+addi $a0, $zero, 98
+addi $a1, $zero, 216
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 219
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 98
+addi $a1, $zero, 222
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 97
+addi $a1, $zero, 219
+addi $a2, $zero, 2
+addi $a3, $zero, 4
+jal draw_rect
+addi $a0, $zero, 101
+addi $a1, $zero, 216
+addi $a2, $zero, 1
+addi $a3, $zero, 3
+jal draw_rect
+
+# 3
+addi $a0, $zero, 106 
+addi $a1, $zero, 216
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 219
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 106
+addi $a1, $zero, 222
+addi $a2, $zero, 4
+addi $a3, $zero, 1
+jal draw_rect
+addi $a0, $zero, 109
+addi $a1, $zero, 216
+addi $a2, $zero, 1
+addi $a3, $zero, 7
+jal draw_rect
+#########################################################################################################################
+
+
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
+#check_key_3:
+#lw $t0, keyboard_address
+#lw $t8, 0 ($t0) 
+#beq $t8, 1, check_level
+#j check_key_3
+
+#check_level:
+#lw $t0, keyboard_address
+#lw $t8, 4 ($t0) 
+#beq $t8, 0x31, start_game # Speed is 1
+#beq $t8, 0x32, start_game # Speed is 2
+#beq $t8, 0x33, start_game # Speed is 3
+#j check_level
 
 #######################
 ### Other Functions ###
