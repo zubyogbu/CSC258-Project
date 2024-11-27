@@ -60,7 +60,7 @@ anim_frame_y:       .word       0
 State: .byte 0:1        # This byte tracks whether the next check should be for generate a new piece (0),
                         # deleting pieces(1), gravity movement (2), player controled movement (3)
                         # Game Over (4)
-
+speed:              .byte       0
 difficulty:         .byte       1
 capsule_type:       .byte       0
 capsule_rotation:   .byte       0
@@ -72,6 +72,13 @@ main:
 
 # Initialize
 Main_Menu_Return_Point:
+add $a0, $zero, $zero
+add $a1, $zero, $zero
+addi $a2, $zero, 256
+addi $a3, $zero, 256
+li $t8, 0
+jal draw_rect
+
 
 jal Load_Menu
 jal Double_Buffer
@@ -84,8 +91,25 @@ j Check_Menu_decsion
 
 Process_Menu_Decision : # A key is pressed
 lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
-beq $t2 , 0x71 , Unpause # Check if the key q
+beq $t2 , 0x31 , difficulty_1 # Check if the key 1
+beq $t2 , 0x32 , difficulty_2 # Check if the key 1
+beq $t2 , 0x33 , difficulty_3 # Check if the key 1
+j Check_Menu_decsion
+difficulty_1:
+li $t0, 1
+sb $t0, difficulty
+j Post_Difficulty
+difficulty_2:
+li $t0, 2
+sb $t0, difficulty
+j Post_Difficulty
 
+difficulty_3:
+li $t0, 3
+sb $t0, difficulty
+j Post_Difficulty
+
+Post_Difficulty:
 
 jal select_speed
 jal Double_Buffer
@@ -98,8 +122,25 @@ j Check_Speed_Selection
 
 Process_Speed_Selection : # A key is pressed
 lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
-beq $t2 , 0x71 , Unpause # Check if the key q
+beq $t2 , 0x31 , speed_select_1 # Check if the key 1
+beq $t2 , 0x32 , Speed_select_2 # Check if the key 1
+beq $t2 , 0x33 , speed_select_3 # Check if the key 1
+j Check_Speed_Selection
+speed_select_1:
+li $t0, 1
+sb $t0, speed
+j Post_Speed
+Speed_select_2:
+li $t0, 2
+sb $t0, speed
+j Post_Speed
 
+speed_select_3:
+li $t0, 3
+sb $t0, speed
+j Post_Speed
+
+Post_Speed:
 
 
 jal select_level
@@ -113,16 +154,38 @@ j Check_level_Selection
 
 Process_Level_selection : # A key is pressed
 lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
-beq $t2 , 0x71 , Unpause # Check if the key q
-
-
-
-lb $zero, State
-
+beq $t2 , 0x31 , level_select_1 # Check if the key 1
+beq $t2 , 0x32 , level_select_2 # Check if the key 1
+beq $t2 , 0x33 , level_select_3 # Check if the key 1
+j Check_level_Selection
+level_select_1:
 li $t0, 1
-sb $t0, difficulty
+sw $t0, Level
+j Post_level
+level_select_2:
+li $t0, 2
+sw $t0, Level
+j Post_level
 
-addi $t0, $zero, 10
+level_select_3:
+li $t0, 3
+sw $t0, Level
+j Post_level
+
+Post_level:
+Reset_Point:
+sw $zero, Score
+la $a0, Clear_Slot
+jal Access_All
+
+sb $zero, State
+
+
+
+addi $t0, $zero, 5
+lb $t1, speed
+mul $t0, $t0, $t1
+
 sw $t0, frame_count
 sw $t0, frame_speed
 
@@ -138,7 +201,7 @@ li $v0 , 32     # Start of Loop / Delay?
 li $a0 , 16
 syscall
 
-
+lb $t0, State
 jal Movement_Determiner  # Update Piece Positions
 
 jal Draw_Graphics # Draw the new board
@@ -156,10 +219,50 @@ beq $t0, $zero, Post_Game   # If all viruses are dead, end the game
 lb $t0, State
 li $t1, 3
 ble $t0, $t1, Start_Main_Loop
+Lost_game:
+jal Game_Over
+jal Double_Buffer
 
+
+restart_game_check:
+lw $t0 , keyboard_address       # $t 0 = base address for keyboard
+lw $t8 , 0 ( $t0 )              # Load first word from keyboard
+beq $t8 , 1 , Process_restart_game   # If first word 1 , key is pressed
+j restart_game_check
+
+Process_restart_game : # A key is pressed
+lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
+beq $t2 , 0x72 , Restart_confirmed# Check if the key 1
+
+j restart_game_check
+Restart_confirmed:
+
+
+
+
+lw $t0, Score
+lw $t1, Top_Score
+bgt $t0, $t1, Increas_top_Score_lost
+j Main_Menu_Return_Point
+Increas_top_Score_lost:
+sw $t0, Top_Score
+j Main_Menu_Return_Point
 Post_Game:
 #jal Game_Over
 jal Double_Buffer
+lw $t0, Score
+lw $t1, Top_Score
+bgt $t0, $t1, Increas_top_Score_win
+lw $t0, Level
+addi $t0, $t0, 1
+sw $t0, Level
+j Reset_Point
+Increas_top_Score_win:
+sw $t0, Top_Score
+lw $t0, Level
+addi $t0, $t0, 1
+sw $t0, Level
+j Reset_Point
 Exit:
 li $v0 , 10             # Exit
 syscall
@@ -167,23 +270,46 @@ syscall
 
 
 
+Clear_Slot: # Set the value of the given address in $a1 to 0
+sh $zero, 0($a1)
+jr $ra
+
 
 Respond_to_q:
+
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
+Respond_q_Dont_store:
 # Draw Pause screen 
+li $a0, 128
+li $a1, 100
+li $a2, 8
+li $a3, 16
+li $t8, 0xffffff
+jal draw_rect
+li $a0, 116
+li $a1, 100
+li $a2, 8
+li $a3, 16
+li $t8, 0xffffff
+jal draw_rect
+jal Double_Buffer
 j Check_unPause_game
 
 Check_unPause_game:
 lw $t0 , keyboard_address # $t 0 = base address for keyboard
 lw $t8 , 0 ( $t0 ) # Load first word from keyboard
 beq $t8 , 1 , unPause_Game # If first word 1 , key is pressed
-j Respond_to_q
+j Respond_q_Dont_store
 
 unPause_Game : # A key is pressed
 lw $t2 , 4 ( $t0 ) # Load secondword from keyboard
-beq $t2 , 0x71 , Unpause # Check if the key q
-j Respond_to_q
+beq $t2 , 0x72 , Unpause # Check if the key q
+j Respond_q_Dont_store
 Unpause:
-jr $ra
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
 
 
 Frame_Advance:  # Decrement the frame count
@@ -196,7 +322,8 @@ j Frame_Advance_Return
 Reset_Frame_Count:  # Set the frame count based on the difficulty and number of viruses
 lw $t1, frame_speed
 lw $t2, Viruses
-srl $t2, $t2, 1  # divide by 2
+lb $t3, difficulty
+div $t2, $t2, $t3
 add $t1, $t1, $t2       # add viruses/2 to the deplay
 add $t0, $t1, $zero
 Frame_Advance_Return:
@@ -733,8 +860,8 @@ beq $t2 , 0x61 , respond_to_A # Check if the key a was pressed
 beq $t2 , 0x64 , respond_to_D # Check if the key d was pressed
 beq $t2 , 0x73 , respond_to_S # Check if the key s was pressed
 beq $t2 , 0x77 , respond_to_W # Check if the key w was pressed
-beq $t2 , 0x71 , Respond_to_q # Check if the key q was pressed
-
+beq $t2 , 0x72 , Respond_to_q # Check if the key r was pressed
+beq $t2 , 0x71 , Exit # Check if the key q was pressed
 j Player_Movement_Return
 
 respond_to_A:       # ascii 0x61
@@ -2277,20 +2404,210 @@ li $t1, 1
 beq $t0, $t1, Red_Virus
 li $t8, 0
 j Inside_Pill_Draw_Rect
+
 Blue_Virus:
+add $t5, $zero, $a0
+add $t6, $zero, $a1
+
+addi $a0, $t5, 1
+addi $a1, $t6, 1 
+addi $a2, $zero, 6     
+addi $a3, $zero, 6         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 2 
+addi $a2, $zero, 8     
+addi $a3, $zero, 4         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 0 
+addi $a2, $zero, 2      
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 6
+addi $a1, $t6, 0 
+addi $a2, $zero, 2      
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+
+addi $a0, $t5, 2
+addi $a1, $t6, 2 
+addi $a2, $zero, 2      
+addi $a3, $zero, 2         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 4
+addi $a1, $t6, 2 
+addi $a2, $zero, 2      
+addi $a3, $zero, 2         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 1
+addi $a1, $t6, 3 
+addi $a2, $zero, 6     
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 3
+addi $a1, $t6, 3
+addi $a2, $zero, 1     
+addi $a3, $zero, 1         
+add $t8, $zero, $s4
+jal draw_rect
+addi $a0, $t5, 5
+addi $a1, $t6, 3
+addi $a2, $zero, 1     
+addi $a3, $zero, 1         
+add $t8, $zero, $s4
+jal draw_rect
+
+j finish_jar
 Blue:
 add $t8, $zero, $s5
 j Inside_Pill_Draw_Rect
 Yellow_Virus:
+add $t5, $zero, $a0
+add $t6, $zero, $a1
+
+addi $a0, $t5, 2
+addi $a1, $t6, 1 
+addi $a2, $zero, 4     
+addi $a3, $zero, 6         
+add $t8, $zero, $s4
+jal draw_rect
+addi $a0, $t5, 1
+addi $a1, $t6, 2 
+addi $a2, $zero, 6     
+addi $a3, $zero, 5         
+add $t8, $zero, $s4
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 3 
+addi $a2, $zero, 8     
+addi $a3, $zero, 3         
+add $t8, $zero, $s4
+jal draw_rect
+addi $a0, $t5, 2
+addi $a1, $t6, 0 
+addi $a2, $zero, 1      
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 5
+addi $a1, $t6, 0 
+addi $a2, $zero, 1      
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 1 
+addi $a2, $zero, 1      
+addi $a3, $zero, 1         
+add $t8, $zero, $s4
+jal draw_rect
+addi $a0, $t5, 7
+addi $a1, $t6, 1 
+addi $a2, $zero, 1      
+addi $a3, $zero, 1         
+add $t8, $zero, $s4
+jal draw_rect
+
+addi $a0, $t5, 2
+addi $a1, $t6, 2 
+addi $a2, $zero, 4      
+addi $a3, $zero, 2   
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 3
+addi $a1, $t6, 3 
+addi $a2, $zero, 1     
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 5
+addi $a1, $t6, 3 
+addi $a2, $zero, 1     
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+
+j finish_jar
 Yellow:
 add $t8, $zero, $s4
 j Inside_Pill_Draw_Rect
 Red_Virus:
+add $t5, $zero, $a0
+add $t6, $zero, $a1
+
+addi $a0, $t5, 0
+addi $a1, $t6, 0 
+addi $a2, $zero, 8    
+addi $a3, $zero, 8         
+add $t8, $zero, $s3
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 0 
+addi $a2, $zero, 2    
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 6
+addi $a1, $t6, 0 
+addi $a2, $zero, 2    
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 0
+addi $a1, $t6, 7 
+addi $a2, $zero, 1    
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 7
+addi $a1, $t6, 7 
+addi $a2, $zero, 1    
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $t5, 2
+addi $a1, $t6, 1 
+addi $a2, $zero, 4    
+addi $a3, $zero, 2         
+add $t8, $zero, $zero
+jal draw_rect
+addi $a0, $t5, 1
+addi $a1, $t6, 2 
+addi $a2, $zero, 6    
+addi $a3, $zero, 1         
+add $t8, $zero, $zero
+jal draw_rect
+
+addi $a0, $t5, 2
+addi $a1, $t6, 2 
+addi $a2, $zero, 1    
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+addi $a0, $t5, 4
+addi $a1, $t6, 2 
+addi $a2, $zero, 1    
+addi $a3, $zero, 1         
+add $t8, $zero, $s5
+jal draw_rect
+
+j finish_jar
 Red:
 add $t8, $zero, $s3
 
 Inside_Pill_Draw_Rect:
 jal draw_rect
+
+finish_jar:
 
 lw $ra, 0($sp)      # Read return address from the stack
 addi $sp, $sp, 4
@@ -3637,22 +3954,22 @@ jal draw_rect
 j show_speed
 
 level_3:
-addi $a0, $zero, 106 
+addi $a0, $zero, 224
 addi $a1, $zero, 152
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 106
+addi $a0, $zero, 224
 addi $a1, $zero, 155
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 106
+addi $a0, $zero, 224
 addi $a1, $zero, 158
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 109
+addi $a0, $zero, 227
 addi $a1, $zero, 152
 addi $a2, $zero, 1
 addi $a3, $zero, 7
@@ -3660,7 +3977,7 @@ jal draw_rect
 j show_speed
 
 show_speed:
-lw $t9, frame_count
+lb $t9, speed
 beq $t9, 1, speed_1
 beq $t9, 2, speed_2
 beq $t9, 3, speed_3
@@ -3846,25 +4163,25 @@ add $t9, $t9, 8
 j show_virus_count
 
 show_v_3:
-addi $a0, $zero, 224
+addi $a0, $zero, 225
 addi $a1, $zero, 200
 sub $a0, $a0, $t9
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 224
+addi $a0, $zero, 225
 sub $a0, $a0, $t9
 addi $a1, $zero, 203
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 224
+addi $a0, $zero, 225
 sub $a0, $a0, $t9
 addi $a1, $zero, 206
 addi $a2, $zero, 4
 addi $a3, $zero, 1
 jal draw_rect
-addi $a0, $zero, 227
+addi $a0, $zero, 228
 sub $a0, $a0, $t9
 addi $a1, $zero, 200
 addi $a2, $zero, 1
@@ -6949,6 +7266,10 @@ j main_jar_start
 ### Game Over ###
 #################
 Game_Over:
+
+addi $sp, $sp, -4                    # Store Return Address on the stack
+sw $ra, 0($sp)
+
 addi $a0, $zero, 80      
 addi $a1, $zero, 64      
 addi $a2, $zero, 96     
@@ -7249,17 +7570,10 @@ addi $a3, $zero, 2
 add, $t8, $zero, 0x637355
 jal draw_rect
 
-check_press:
-lw $t0, keyboard_address
-lw $t8, 0 ($t0) 
-beq $t8, 1, check_r
-j check_press
 
-check_r:
-lw $t0, keyboard_address
-lw $t8, 4 ($t0) 
-beq $t8, 0x72, select_speed # Difficulty is 1
-j check_r
+lw $ra, 0($sp)      # Read return address from the stack
+addi $sp, $sp, 4
+jr $ra              # Exit function
 
 retry:
 # j ...
